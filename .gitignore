@@ -1,0 +1,20 @@
+# Node modules
+node_modules/
+
+# Temporary exam composition file
+.current_exam.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+

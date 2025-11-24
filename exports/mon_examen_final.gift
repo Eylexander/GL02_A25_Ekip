@@ -1,0 +1,161 @@
+// ========================================
+// Examen Test GL02
+// ========================================
+// Généré le: 24 novembre 2025 à 13:33
+// Nombre de questions: 20
+// Format: GIFT (Moodle)
+//
+// Créé le: 24 novembre 2025 à 13:26
+// Dernière modification: 24 novembre 2025 à 13:28
+// ========================================
+
+// Question 1
+// Type: MultipleChoice
+// Source: EM-U42-Ultimate.gift
+
+::EM U42 Ultimate q1::What's the answer to this multiple-choice question? {
+  ~wrong answer#feedback comment on the wrong answer
+  ~another wrong answer#feedback comment on this wrong answer
+  =right answer#Very good!
+}
+
+//From The Hitchhiker's Guide to the Galaxy
+
+// Question 2
+// Type: ShortAnswer
+// Source: U1-p7-Adverbs.gift
+
+::U1 p7 Adverbs GR 1.1::[html]Does she come by car? (<i>generally</i>) {
+ =Does she generally come by car?}
+
+// Question 3
+// Type: MultipleChoice
+// Source: U2-p22-Gra-Ing_or_inf.gift
+
+::U2 p22 6.1a – Verb patterns -ing or inf::My mother stopped {~=making~to make} lunch because the phone rang.
+
+// Question 4
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.1::Would you like {~=some~a few} rice with your chicken?
+
+// Question 5
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.2::I mustn't eat too {~many~=much} chocolate — it's bad for me!
+
+// Question 6
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.3::People who eat too {~=much~many} salt can suffer from high blood pressure
+
+// Question 7
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.4::I drink {~=hardly any~a few} coffee, if I drink too {~many~=much}, I can't sleep
+
+// Question 8
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.5::I buy very {~=few~little} eggs as I keep chickens, so I have new-laid eggs
+
+// Question 9
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.6::I eat {~=hardly any~a few} meat — I prefer vegetables!
+
+// Question 10
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.7::There is always {~many~=a lot of} news about food scares these days
+
+// Question 11
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra1.8::There are {~=lots of~much} fantastic desserts at that new restaurant!
+
+// Grammar Ex. 2
+
+// Question 12
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra2.1::I knew very {~=few~a few~little~a little} people al the party, so I didn’t stay long.
+
+// Question 13
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra2.2::{~Few~=A few~Little~A little} of us are going to have a barbecue in the garden tonight. Do you fancy coming?
+
+// Question 14
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra2.3::Please could I have {~few~a few~little~=a little} sugar — this coffee is rather strong.
+
+// Question 15
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra2.4::I've got {~few~a few~little~=a little} free time this week so I can do the work if you like.
+
+// Question 16
+// Type: MultipleChoice
+// Source: EM-U5-p34-Gra-Expressions_of_quantity.gift
+
+::EM U5 p34 Gra2.5::I've eaten so many already that there are only {~few~=a few~little~a little} chocolates left!
+
+// Question 17
+// Type: ShortAnswer
+// Source: U1-p7-Adverbs.gift
+
+::U1 p7 Adverbs GR 1.3::[html]They're a little nervous at the beginning. (<i>sometimes</i>) {
+ =They're sometimes a little nervous at the beginning.
+ =They are sometimes a little nervous at the beginning.
+ =They're sometimes a little nervous at the beginning
+ =They are sometimes a little nervous at the beginning
+ =They’re sometimes a little nervous at the beginning
+ =They’re sometimes a little nervous at the beginning.}
+
+// Question 18
+// Type: ShortAnswer
+// Source: U1-p7-Adverbs.gift
+
+::U1 p7 Adverbs GR 1.4::[html]I don't go to the gym on Fridays. (<i>usually</i>) {
+ =I don't usually go to the gym on Fridays.
+ =I do not usually go to the gym on Fridays.
+ =I don't usually go to the gym on Fridays
+ =I do not usually go to the gym on Fridays
+ =I don’t usually go to the gym on Fridays
+ =I don’t usually go to the gym on Fridays.}
+
+// Question 19
+// Type: ShortAnswer
+// Source: U1-p7-Adverbs.gift
+
+::U1 p7 Adverbs GR 1.5::[html]They've been told that. (<i>often</i>) {
+ =They've often been told that.
+ =They have often been told that.
+ =They've often been told that
+ =They have often been told that
+ =They’ve often been told that
+ =They’ve often been told that.}
+
+// Question 20
+// Type: MultipleChoice
+// Source: U2-p22-Gra-Ing_or_inf.gift
+
+::U2 p22 6.1b – Verb patterns -ing or inf::My mother stopped {~making~=to make} lunch because we were hungry.
+
+// ========================================
+// Fin de l'examen - 20 questions
+// ========================================

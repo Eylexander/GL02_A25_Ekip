@@ -1,0 +1,12 @@
+BEGIN:VCARD
+VERSION:4.0
+FN:Jean Dupont
+N:Dupont;Jean;;;
+EMAIL;TYPE=work:jean.dupont@sryem.se
+TEL;TYPE=work,voice:+46 123 456 789
+ORG:SRYEM - Ministère de l'Éducation nationale de Sealand
+TITLE:Enseignant
+ADR;TYPE=work:;;;;;;Sealand
+REV:20251124T123730Z
+PRODID:-//SRYEM//GIFT CLI VCard Generator//FR
+END:VCARD
