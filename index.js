@@ -26,6 +26,27 @@ const {
   validateEmail,
   previewVCard,
 } = require("./vcardGenerator");
+const {
+  simulateExam,
+  saveResults,
+} = require("./examSimulator");
+const {
+  verifyGiftExam,
+} = require("./qualityChecker");
+const {
+  generateProfileReport,
+  saveProfileToFile,
+} = require("./examProfile");
+const {
+  compareProfiles,
+  generateComparisonReport,
+  saveComparisonReport,
+} = require("./profileComparator");
+const {
+  importGiftFile,
+  exportGiftFile,
+  importToBank,
+} = require("./importExport");
 const fs = require("fs");
 const path = require("path");
 
@@ -673,6 +694,336 @@ cli
       console.log(preview.content);
       logger.info(chalk.gray("─".repeat(70)));
       logger.info(chalk.green("\n✓ VCard valide selon RFC 6350\n"));
+      
+    } catch (error) {
+      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      process.exit(1);
+    }
+  })
+  
+  // EF05: Exam simulation command
+  .command("simuler", "Simulate taking an exam from a GIFT file")
+  .argument("<examen>", "Path to the GIFT exam file")
+  .option("-s, --save <fichier>", "Save results to a file", {
+    validator: cli.STRING,
+  })
+  .action(async ({ args, options, logger }) => {
+    try {
+      const examPath = args.examen;
+      
+      // Check if file exists
+      if (!fs.existsSync(examPath)) {
+        logger.error(chalk.red(`\n✗ Le fichier ${examPath} est introuvable. Vérifiez le chemin.\n`));
+        process.exit(1);
+      }
+      
+      // Run simulation
+      const results = await simulateExam(examPath);
+      
+      // Save results if requested
+      if (options.save) {
+        const outputPath = options.save;
+        saveResults(results, outputPath);
+      } else {
+        // Ask if user wants to save
+        const readline = require("readline");
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+        
+        rl.question("\n💾 Voulez-vous sauvegarder le bilan ? (o/n): ", (answer) => {
+          if (answer.toLowerCase() === "o" || answer.toLowerCase() === "oui") {
+            const defaultPath = `./resultats_${new Date().toISOString().split('T')[0]}.txt`;
+            rl.question(`Nom du fichier [${defaultPath}]: `, (filename) => {
+              const outputPath = filename.trim() || defaultPath;
+              saveResults(results, outputPath);
+              rl.close();
+            });
+          } else {
+            logger.info("\n");
+            rl.close();
+          }
+        });
+      }
+      
+    } catch (error) {
+      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      if (error.stack) {
+        logger.debug(error.stack);
+      }
+      process.exit(1);
+    }
+  })
+  
+  // EF06: Quality verification command
+  .command("verifier", "Verify the quality of a GIFT exam file")
+  .argument("<examen>", "Path to the GIFT exam file to verify")
+  .action(({ args, logger }) => {
+    try {
+      const examPath = args.examen;
+      
+      // Check if file exists
+      if (!fs.existsSync(examPath)) {
+        logger.error(chalk.red(`\n✗ Le fichier ${examPath} est introuvable.\n`));
+        process.exit(1);
+      }
+      
+      logger.info(chalk.blue.bold("\n🔍 VÉRIFICATION DE LA QUALITÉ DE L'EXAMEN\n"));
+      logger.info(chalk.gray(`Fichier: ${examPath}\n`));
+      
+      // Verify the exam
+      const result = verifyGiftExam(examPath);
+      
+      // Display statistics
+      if (result.stats) {
+        logger.info(chalk.cyan("📊 Statistiques:"));
+        logger.info(`   Questions: ${result.stats.totalQuestions}`);
+        logger.info(`   Types: ${Object.keys(result.stats.typeDistribution).join(", ")}`);
+        Object.entries(result.stats.typeDistribution).forEach(([type, count]) => {
+          logger.info(`     - ${type}: ${count}`);
+        });
+        logger.info("");
+      }
+      
+      // Display errors
+      if (result.errors.length > 0) {
+        logger.error(chalk.red.bold("❌ Erreurs détectées:\n"));
+        result.errors.forEach((error, i) => {
+          logger.error(chalk.red(`   ${i + 1}. ${error}`));
+        });
+        logger.info("");
+      }
+      
+      // Display warnings
+      if (result.warnings.length > 0) {
+        logger.warn(chalk.yellow.bold("⚠️  Avertissements:\n"));
+        result.warnings.forEach((warning, i) => {
+          logger.warn(chalk.yellow(`   ${i + 1}. ${warning}`));
+        });
+        logger.info("");
+      }
+      
+      // Display final result
+      if (result.valid) {
+        logger.info(chalk.green.bold("✅ Examen conforme aux règles du SRYEM\n"));
+        process.exit(0);
+      } else {
+        logger.error(chalk.red.bold("❌ L'examen ne peut pas être validé. Veuillez corriger les erreurs listées ci-dessus.\n"));
+        process.exit(1);
+      }
+      
+    } catch (error) {
+      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      process.exit(1);
+    }
+  })
+  
+  // EF07: Exam profile with histogram
+  .command("profil", "Generate a question type distribution histogram for an exam")
+  .argument("<examen>", "Path to the GIFT exam file")
+  .option("-s, --sortie <fichier>", "Save histogram to a file", {
+    validator: cli.STRING,
+  })
+  .action(({ args, options, logger }) => {
+    try {
+      const examPath = args.examen;
+      
+      // Check if file exists
+      if (!fs.existsSync(examPath)) {
+        logger.error(chalk.red(`\n✗ Le fichier ${examPath} est introuvable.\n`));
+        process.exit(1);
+      }
+      
+      logger.info(chalk.blue.bold("\n📊 PROFIL DE L'EXAMEN\n"));
+      logger.info(chalk.gray(`Fichier: ${examPath}\n`));
+      
+      // Generate profile
+      const result = generateProfileReport(examPath);
+      
+      if (!result.success) {
+        logger.error(chalk.red(`\n✗ Erreur: ${result.error}\n`));
+        process.exit(1);
+      }
+      
+      // Display histogram
+      console.log(result.histogram);
+      
+      // Display additional stats
+      logger.info(chalk.cyan("\n📈 Statistiques:"));
+      logger.info(`   Nombre de types différents: ${result.stats.typeCount}`);
+      logger.info(`   Type le plus fréquent: ${
+        Object.entries(result.stats.typeDistribution)
+          .sort((a, b) => b[1] - a[1])[0][0]
+      }`);
+      logger.info("");
+      
+      // Save to file if requested
+      if (options.sortie) {
+        const saveResult = saveProfileToFile(result.histogram, options.sortie);
+        
+        if (saveResult.success) {
+          logger.info(chalk.green(`✓ Histogramme sauvegardé sous ${options.sortie}\n`));
+        } else {
+          logger.error(chalk.red(`✗ Erreur lors de la sauvegarde: ${saveResult.error}\n`));
+          process.exit(1);
+        }
+      }
+      
+    } catch (error) {
+      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      process.exit(1);
+    }
+  })
+  
+  // EF08: Profile comparison command
+  .command("comparer", "Compare an exam profile with the question bank")
+  .argument("<examen>", "Path to the exam GIFT file")
+  .option("-b, --banque <path>", "Path to bank file or directory (default: ./data)", {
+    default: "./data",
+  })
+  .option("-s, --sortie <fichier>", "Save comparison report to a file", {
+    validator: cli.STRING,
+  })
+  .action(({ args, options, logger }) => {
+    try {
+      const examPath = args.examen;
+      const bankPath = options.banque;
+      
+      // Check if exam file exists
+      if (!fs.existsSync(examPath)) {
+        logger.error(chalk.red(`\n✗ Le fichier d'examen ${examPath} est introuvable.\n`));
+        process.exit(1);
+      }
+      
+      // Check if bank exists
+      if (!fs.existsSync(bankPath)) {
+        logger.error(chalk.red(`\n✗ La banque ${bankPath} est introuvable.\n`));
+        process.exit(1);
+      }
+      
+      logger.info(chalk.blue.bold("\n📊 COMPARAISON DES PROFILS\n"));
+      logger.info(chalk.gray(`Examen: ${examPath}`));
+      logger.info(chalk.gray(`Banque: ${bankPath}\n`));
+      
+      // Perform comparison
+      const comparison = compareProfiles(examPath, bankPath);
+      
+      if (!comparison.success) {
+        logger.error(chalk.red(`\n✗ ${comparison.error}\n`));
+        process.exit(1);
+      }
+      
+      // Generate report
+      const report = generateComparisonReport(comparison);
+      
+      // Display report
+      console.log(report);
+      
+      // Save to file if requested
+      if (options.sortie) {
+        const saveResult = saveComparisonReport(report, options.sortie);
+        
+        if (saveResult.success) {
+          logger.info(chalk.green(`\n✓ Rapport de comparaison sauvegardé sous ${options.sortie}\n`));
+        } else {
+          logger.error(chalk.red(`\n✗ Erreur lors de la sauvegarde: ${saveResult.error}\n`));
+          process.exit(1);
+        }
+      }
+      
+    } catch (error) {
+      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      process.exit(1);
+    }
+  })
+  
+  // EF10: Import command
+  .command("importer", "Import and validate a GIFT file")
+  .argument("<fichier>", "Path to the GIFT file to import")
+  .option("-b, --banque", "Import to the question bank (./data)", {
+    default: false,
+  })
+  .action(({ args, options, logger }) => {
+    try {
+      const filePath = args.fichier;
+      
+      logger.info(chalk.blue.bold("\n📥 IMPORT DE FICHIER GIFT\n"));
+      logger.info(chalk.gray(`Fichier: ${filePath}\n`));
+      
+      if (options.banque) {
+        // Import to bank
+        const result = importToBank(filePath);
+        
+        if (!result.success) {
+          logger.error(chalk.red(`✗ ${result.error}\n`));
+          process.exit(1);
+        }
+        
+        logger.info(chalk.green.bold("✅ Fichier importé dans la banque avec succès!\n"));
+        logger.info(chalk.cyan(`📁 Destination: ${result.destinationPath}`));
+        logger.info(chalk.cyan(`📝 Questions chargées: ${result.questionsImported}`));
+        logger.info(chalk.cyan(`📊 Répartition par type:`));
+        Object.entries(result.typeDistribution).forEach(([type, count]) => {
+          logger.info(`   - ${type}: ${count}`);
+        });
+        logger.info("");
+        
+      } else {
+        // Just validate
+        const result = importGiftFile(filePath);
+        
+        if (!result.success) {
+          logger.error(chalk.red(`✗ ${result.error}\n`));
+          process.exit(1);
+        }
+        
+        logger.info(chalk.green.bold("✅ Fichier GIFT valide!\n"));
+        logger.info(chalk.cyan(`📝 Questions totales: ${result.totalQuestions}`));
+        logger.info(chalk.cyan(`✓  Questions valides: ${result.validQuestions}`));
+        
+        if (result.invalidQuestions > 0) {
+          logger.warn(chalk.yellow(`⚠  Questions invalides: ${result.invalidQuestions}`));
+        }
+        
+        logger.info(chalk.cyan(`\n📊 Répartition par type:`));
+        Object.entries(result.typeDistribution).forEach(([type, count]) => {
+          logger.info(`   - ${type}: ${count}`);
+        });
+        logger.info("");
+      }
+      
+    } catch (error) {
+      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      process.exit(1);
+    }
+  })
+  
+  // EF10: Export command
+  .command("exporter", "Export a GIFT file to a destination")
+  .argument("<source>", "Path to the source GIFT file")
+  .argument("<destination>", "Destination path (file or directory)")
+  .action(({ args, logger }) => {
+    try {
+      const sourcePath = args.source;
+      const destPath = args.destination;
+      
+      logger.info(chalk.blue.bold("\n📤 EXPORT DE FICHIER GIFT\n"));
+      logger.info(chalk.gray(`Source: ${sourcePath}`));
+      logger.info(chalk.gray(`Destination: ${destPath}\n`));
+      
+      // Export file
+      const result = exportGiftFile(sourcePath, destPath);
+      
+      if (!result.success) {
+        logger.error(chalk.red(`✗ ${result.error}\n`));
+        process.exit(1);
+      }
+      
+      logger.info(chalk.green.bold("✅ Fichier exporté avec succès!\n"));
+      logger.info(chalk.cyan(`📁 Destination: ${result.destinationFile}`));
+      logger.info(chalk.cyan(`📝 Questions exportées: ${result.questionsExported}`));
+      logger.info("");
       
     } catch (error) {
       logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));

@@ -61,43 +61,122 @@ function extractQuestionText(content) {
  */
 function extractAnswers(content) {
   const answers = [];
-  const answerBlockMatch = content.match(/\{([^}]*)\}/);
   
-  if (!answerBlockMatch) {
-    return answers;
-  }
+  // Find all answer blocks in the content (including multi-line blocks)
+  // Use [\s\S] to match any character including newlines
+  const answerBlockRegex = /\{([\s\S]*?)\}/g;
+  const matches = content.matchAll(answerBlockRegex);
   
-  const answerBlock = answerBlockMatch[1];
-  
-  // Multiple choice or matching
-  if (answerBlock.includes("~") || answerBlock.includes("->")) {
-    // Split by ~ but preserve -> for matching questions
-    const parts = answerBlock.split(/(?<![=-])~(?![=-])/);
-    parts.forEach((part) => {
-      part = part.trim();
-      if (part) {
-        const isCorrect = part.startsWith("=");
-        const text = part.replace(/^=/, "").trim();
+  for (const match of matches) {
+    let answerBlock = match[1];
+    
+    // Remove type prefixes like "1:MC:" or "1:SA:" or "#"
+    answerBlock = answerBlock.replace(/^\d+:(MC|SA|NUMERICAL|SHORTANSWER|MULTICHOICE):/i, "");
+    answerBlock = answerBlock.replace(/^#/, ""); // For numerical questions
+    
+    // Skip empty blocks
+    if (!answerBlock.trim()) {
+      continue;
+    }
+    
+    // Multiple choice or matching (has ~ tilde character)
+    if (answerBlock.includes("~")) {
+      // Check if this is multi-line format (answers on separate lines) or inline format
+      const lines = answerBlock.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+      const isMultiline = lines.length > 1 && lines.some(l => l.startsWith("~") || l.startsWith("="));
+      
+      if (isMultiline) {
+        // Multi-line format: each answer on its own line
+        for (const line of lines) {
+          // Skip lines that don't start with ~ or =
+          if (!line.startsWith("~") && !line.startsWith("=")) {
+            continue;
+          }
+          
+          // Check if this answer is marked as correct with =
+          const isCorrect = line.startsWith("=");
+          
+          // Remove the ~ or = prefix
+          let text = line.replace(/^[~=]/, "").trim();
+          
+          // Extract text before feedback marker
+          const feedbackIndex = text.indexOf("#");
+          if (feedbackIndex !== -1) {
+            text = text.substring(0, feedbackIndex).trim();
+          }
+          
+          if (text) {
+            answers.push({
+              text: text,
+              correct: isCorrect,
+            });
+          }
+        }
+      } else {
+        // Inline format: answers separated by ~ on same line
+        const parts = answerBlock.split("~");
+        
+        parts.forEach((part) => {
+          part = part.trim();
+          if (part) {
+            const isCorrect = part.startsWith("=");
+            let text = part.replace(/^=/, "").trim();
+            
+            const feedbackIndex = text.indexOf("#");
+            if (feedbackIndex !== -1) {
+              text = text.substring(0, feedbackIndex).trim();
+            }
+            
+            if (text) {
+              answers.push({
+                text: text,
+                correct: isCorrect,
+              });
+            }
+          }
+        });
+      }
+    } else if (answerBlock.includes("=")) {
+      // Short answer - can have multiple correct answers
+      // Answers can be in format: {=answer1 =answer2 =answer3#feedback}
+      
+      // Use regex to find all answers starting with =
+      // Pattern: = followed by text until space+= or # or end of string
+      const answerPattern = /=([^=]+?)(?=\s+=|#|$)/g;
+      const matches = [...answerBlock.matchAll(answerPattern)];
+      
+      if (matches.length > 0) {
+        matches.forEach(match => {
+          let text = match[1].trim();
+          
+          // Extract text before feedback marker
+          const feedbackIndex = text.indexOf("#");
+          if (feedbackIndex !== -1) {
+            text = text.substring(0, feedbackIndex).trim();
+          }
+          
+          if (text) {
+            answers.push({
+              text: text,
+              correct: true,
+            });
+          }
+        });
+      } else {
+        // Fallback: simple case with single answer
+        let text = answerBlock.replace(/^=/, "").trim();
+        const feedbackIndex = text.indexOf("#");
+        if (feedbackIndex !== -1) {
+          text = text.substring(0, feedbackIndex).trim();
+        }
         if (text) {
           answers.push({
             text: text,
-            correct: isCorrect,
+            correct: true,
           });
         }
       }
-    });
-  } else if (answerBlock.includes("=")) {
-    // Short answer - can have multiple correct answers
-    const parts = answerBlock.split(/\s*=\s*/);
-    parts.forEach((part) => {
-      part = part.trim();
-      if (part) {
-        answers.push({
-          text: part,
-          correct: true,
-        });
-      }
-    });
+    }
   }
   
   return answers;
@@ -110,31 +189,92 @@ function parseGiftFile(filePath) {
   const content = fs.readFileSync(filePath, "utf8");
   const questions = [];
   
-  // Split content by question markers (::...::)
-  const questionPattern = /::(.*?)::(.*?)(?=(?:::|$))/gs;
-  let match;
+  // Split content by lines first to handle comments
+  const lines = content.split("\n");
+  let currentQuestion = null;
+  let currentContent = [];
   
-  while ((match = questionPattern.exec(content)) !== null) {
-    const title = match[1].trim();
-    const questionContent = match[2].trim();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     
-    // Skip empty questions or instructions
-    if (!questionContent || questionContent.length < 5) {
-      continue;
+    // Check if line starts a new question (::title::)
+    const questionStart = line.match(/^::([^:]+)::(.*)/);
+    
+    if (questionStart) {
+      // Save previous question if exists
+      if (currentQuestion && currentContent.length > 0) {
+        const questionContent = currentContent.join("\n").trim();
+        
+        // Skip empty questions or pure instruction questions
+        if (questionContent.length >= 5 && questionContent.includes("{")) {
+          const type = detectQuestionType(questionContent);
+          const questionText = extractQuestionText(questionContent);
+          const answers = extractAnswers(questionContent);
+          
+          questions.push({
+            title: currentQuestion,
+            type: type,
+            content: questionContent,
+            questionText: questionText,
+            answers: answers,
+            rawContent: questionContent,
+          });
+        }
+      }
+      
+      // Start new question
+      currentQuestion = questionStart[1].trim();
+      currentContent = [questionStart[2]]; // Include content after ::title::
+    } else if (currentQuestion) {
+      // Add line to current question content
+      // Stop if we hit a comment that looks like a new section
+      if (line.trim().startsWith("// Part ") || line.trim().startsWith("//Part ")) {
+        // This is likely a section separator, save current question
+        if (currentContent.length > 0) {
+          const questionContent = currentContent.join("\n").trim();
+          
+          if (questionContent.length >= 5 && questionContent.includes("{")) {
+            const type = detectQuestionType(questionContent);
+            const questionText = extractQuestionText(questionContent);
+            const answers = extractAnswers(questionContent);
+            
+            questions.push({
+              title: currentQuestion,
+              type: type,
+              content: questionContent,
+              questionText: questionText,
+              answers: answers,
+              rawContent: questionContent,
+            });
+          }
+          
+          currentQuestion = null;
+          currentContent = [];
+        }
+      } else {
+        currentContent.push(line);
+      }
     }
+  }
+  
+  // Don't forget last question
+  if (currentQuestion && currentContent.length > 0) {
+    const questionContent = currentContent.join("\n").trim();
     
-    const type = detectQuestionType(questionContent);
-    const questionText = extractQuestionText(questionContent);
-    const answers = extractAnswers(questionContent);
-    
-    questions.push({
-      title: title,
-      type: type,
-      content: questionContent,
-      questionText: questionText,
-      answers: answers,
-      rawContent: questionContent,
-    });
+    if (questionContent.length >= 5 && questionContent.includes("{")) {
+      const type = detectQuestionType(questionContent);
+      const questionText = extractQuestionText(questionContent);
+      const answers = extractAnswers(questionContent);
+      
+      questions.push({
+        title: currentQuestion,
+        type: type,
+        content: questionContent,
+        questionText: questionText,
+        answers: answers,
+        rawContent: questionContent,
+      });
+    }
   }
   
   return questions;

@@ -1,22 +1,362 @@
 # GIFT CLI - Outil de Gestion des Questions d'Examen
 
-Un utilitaire en ligne de commande pour gérer une banque de questions au format GIFT (General Import Format Technology) pour le ministère de l'Éducation nationale de Sealand (SRYEM).
-
-## 📋 Description
+Cet outil est un utilitaire en ligne de commande pour gérer une banque de questions au format GIFT (General Import Format Technology) pour le ministère de l'Éducation nationale de Sealand (SRYEM).
 
 Cet outil permet aux enseignants et gestionnaires de :
+
 - Rechercher et visualiser des questions dans la banque certifiée
 - Analyser les statistiques de la banque de questions
 - Filtrer par type de question et mots-clés
 - Composer des examens conformes aux normes GIFT
+- Créer des carte permettant d’identifier des acteurs (enseignants, secretaires etc)
+- Simuler un examen
+- Exporter et importer des examens
 
-## 🚀 Installation
+La banque de questions initiales nous a été fournis par le client, et se situe dans le dossier “data”.
+
+### **Types de Questions Supportés**
+
+Le parser reconnaît automatiquement les types suivants :
+
+| Type | Description | Exemple GIFT |
+| --- | --- | --- |
+| **MultipleChoice** | Questions à choix multiples | `{~wrong~=correct~wrong}` ou `{1:MC:~=correct~wrong}` |
+| **ShortAnswer** | Questions à réponse courte | `{=answer1 =answer2}` ou `{1:SA:=answer}` |
+| **Matching** | Questions d'association | `{=item1->match1 =item2->match2}` |
+| **TrueFalse** | Questions vrai/faux | `{TRUE}` ou `{FALSE}` |
+| **Numerical** | Questions numériques | `{#42}` |
+| **Unknown** | Type non reconnu | - |
+
+### Architecture
+
+**Structure du Projet**
+
+```
+projet/
+├── index.js              # Interface CLI (Caporal) - Point d'entrée
+├── giftParser.js         # Parser GIFT et fonctions de recherche
+├── examManager.js        # Gestion de la composition d'examens
+├── giftGenerator.js      # Génération de fichiers GIFT
+├── vcardGenerator.js     # Génération de fichiers VCard
+├── examSimulator.js      # Simulation de passation d'examens
+├── qualityChecker.js     # Vérification de qualité des examens
+├── examProfile.js        # Génération de profils d'examens
+├── profileComparator.js  # Comparaison de profils
+├── importExport.js       # Import/export de fichiers GIFT
+├── data/                 # Banque de questions GIFT (47 fichiers)
+├── output/               # Fichiers générés (examens, VCards)
+├── package.json          # Dépendances
+└── README.md             # Documentation
+
+```
+
+### Modules Principaux
+
+### `giftParser.js`
+
+Parser GIFT et recherche de questions.
+
+**Fonctions exportées :**
+
+- `parseGiftFile(filePath)` : Parse un fichier GIFT et extrait les questions
+- `searchQuestions(dataDir, type, keyword)` : Recherche des questions selon critères
+- `getQuestionStats(dataDir)` : Calcule les statistiques de la banque
+- `getAvailableTypes(dataDir)` : Liste tous les types de questions disponibles
+
+**Formats supportés :**
+
+- Questions inline : `{~wrong~=correct}`
+- Questions multi-lignes avec feedback
+- Préfixes spéciaux : `1:MC:`, `1:SA:`
+- Réponses multiples : `{=answer1 =answer2}`
+
+### `examManager.js`
+
+Gestion de la composition d'examens.
+
+**Fonctions exportées :**
+
+- `initExam(title)` : Initialise un nouvel examen
+- `addQuestion(file, title)` : Ajoute une question à l'examen
+- `removeQuestion(index)` : Retire une question par position
+- `moveQuestion(from, to)` : Déplace une question
+- `getCurrentExam()` : Récupère l'examen en cours
+- `clearExam()` : Efface l'examen en cours
+- `validateExam()` : Valide l'examen (15-20 questions, unicité)
+- `getExamStats()` : Statistiques de l'examen
+
+**Contraintes :**
+
+- Minimum 15 questions, maximum 20
+- Aucune question dupliquée
+- Stockage dans `.current_exam.json`
+
+### `giftGenerator.js`
+
+Génération de fichiers GIFT conformes.
+
+**Fonctions exportées :**
+
+- `generateGiftFile(exam, outputPath)` : Génère un fichier GIFT
+- `previewGiftFile(exam, maxLines)` : Aperçu du fichier
+- `getDefaultFilename()` : Nom de fichier avec timestamp
+
+**Format généré :**
+
+- En-tête avec métadonnées
+- Questions au format GIFT standard
+- Commentaires de structure
+- Compatibilité Moodle garantie
+
+### `vcardGenerator.js`
+
+Génération de fichiers VCard RFC 6350/6868.
+
+**Fonctions exportées :**
+
+- `generateVCardFile(teacherData, outputPath)` : Génère une VCard
+- `validateEmail(email)` : Validation d'email
+- `previewVCard(teacherData)` : Aperçu de la VCard
+- `getDefaultVCardFilename(firstName, lastName)` : Nom par défaut
+
+**Conformité RFC :**
+
+- VCard 4.0 (RFC 6350)
+- Encodage paramètres (RFC 6868)
+- Line folding automatique
+- Validation des champs
+
+### `examSimulator.js`
+
+Simulation de passation d'examens.
+
+**Fonctions exportées :**
+
+- `simulateExam(giftFilePath)` : Lance une simulation interactive
+- `saveResults(results, outputPath)` : Sauvegarde le bilan
+
+**Fonctionnalités :**
+
+- Support MultipleChoice et ShortAnswer
+- Questions à trous multiples (cloze tests)
+- Scoring proportionnel
+- Bilan détaillé avec note sur 20
+- Comparaison insensible à la casse
+
+### `qualityChecker.js`
+
+Vérification de qualité des examens.
+
+**Fonctions exportées :**
+
+- `verifyGiftExam(giftFilePath)` : Vérifie un examen GIFT
+
+**Vérifications :**
+
+- Nombre de questions (15-20)
+- Unicité des questions
+- Présence de réponses
+- Réponses correctes présentes
+- Détection de types inconnus
+
+### `examProfile.js`
+
+Génération de profils d'examens (histogrammes).
+
+**Fonctions exportées :**
+
+- `generateExamProfile(giftFilePath)` : Analyse la répartition
+- `generateTextHistogram(typeDistribution, total)` : Histogramme ASCII
+- `generateProfileReport(giftFilePath)` : Rapport complet
+- `saveProfileToFile(histogram, outputPath)` : Sauvegarde
+
+**Visualisation :**
+
+- Histogramme ASCII art
+- Barres proportionnelles
+- Pourcentages par type
+- Statistiques détaillées
+
+### `profileComparator.js`
+
+Comparaison de profils d'examens.
+
+**Fonctions exportées :**
+
+- `generateBankProfile(bankPath)` : Analyse la banque
+- `compareProfiles(examPath, bankPath)` : Compare examen vs banque
+- `generateComparisonReport(comparison)` : Génère rapport
+- `saveComparisonReport(report, outputPath)` : Sauvegarde
+
+**Analyse :**
+
+- Écarts en points de pourcentage
+- Détection écarts significatifs (>10%)
+- Recommandations d'équilibrage
+- Support fichier ou dossier
+
+### `importExport.js`
+
+Import/export de fichiers GIFT.
+
+**Fonctions exportées :**
+
+- `importGiftFile(filePath)` : Import et validation
+- `exportGiftFile(sourceFilePath, destinationPath)` : Export
+- `importToBank(filePath, bankDir)` : Import dans la banque
+
+**Sécurité :**
+
+- Validation format GIFT
+- Vérification permissions
+- Protection contre écrasement
+- Statistiques d'import
+
+### `index.js`
+
+Interface CLI complète avec toutes les commandes.
+
+**Commandes disponibles :**
+
+**Recherche et analyse (EF01) :**
+
+- `search [type] [keyword]` : Recherche de questions
+- `stats` : Statistiques de la banque
+- `types` : Liste des types disponibles
+
+**Composition d'examens (EF02) :**
+
+- `new-exam <titre>` : Initialiser un examen
+- `add-question` : Ajouter une question (interactif)
+- `list-exam [-v]` : Lister les questions
+- `remove-question <position>` : Retirer une question
+- `move-question <from> <to>` : Déplacer une question
+- `clear-exam` : Effacer l'examen
+- `validate-exam` : Valider l'examen
+
+**Génération GIFT (EF03) :**
+
+- `generate-gift [filename]` : Générer fichier GIFT
+- `preview-gift [-l <lines>]` : Aperçu de l'examen
+
+**VCard enseignants (EF04) :**
+
+- `vcard-generate` : Générer VCard
+- `vcard-preview` : Aperçu VCard
+
+**Simulation (EF05) :**
+
+- `simuler <examen>` : Simuler un examen
+- Option `-save` pour sauvegarder résultats
+
+**Vérification qualité (EF06) :**
+
+- `verifier <examen>` : Vérifier qualité
+
+**Profil d'examen (EF07) :**
+
+- `profil <examen>` : Générer histogramme
+- Option `-sortie` pour sauvegarder
+
+**Comparaison de profils (EF08) :**
+
+- `comparer <examen>` : Comparer avec banque
+- Option `-banque` pour spécifier source
+- Option `-sortie` pour sauvegarder
+
+**Import/Export (EF10) :**
+
+- `importer <fichier>` : Valider fichier GIFT
+- Option `-banque` pour importer dans banque
+- `exporter <source> <destination>` : Exporter fichier
+
+**Aide :**
+
+- `-help` : Aide globale ou par commande
+- `-version` : Version du programme
+
+### Format GIFT
+
+Les fichiers GIFT sont structurés comme suit :
+
+```
+// Commentaire
+::Titre de la question::Texte de la question {
+  ~réponse incorrecte
+  =réponse correcte
+  ~autre réponse incorrecte
+}
+
+::Autre question::[html]Question avec HTML {
+  =réponse
+}
+
+```
+
+### Exemples de Questions
+
+**Multiple Choice:**
+
+```
+::Q1::Quelle est la capitale de la France? {
+  ~Londres
+  =Paris
+  ~Berlin
+  ~Madrid
+}
+
+```
+
+**Short Answer:**
+
+```
+::Q2::Complétez la phrase. {
+  =réponse correcte
+  =autre réponse correcte
+}
+
+```
+
+**Matching:**
+
+```
+::Q3::Associez les éléments. {
+  =France -> Paris
+  =Allemagne -> Berlin
+  =Italie -> Rome
+}
+
+```
+
+## Statistiques de la Banque Actuelle
+
+- **47 fichiers** GIFT
+- **480 questions** au total
+- **~10 questions** par fichier en moyenne
+
+Répartition par type :
+
+- MultipleChoice: 47.1% (226 questions)
+- ShortAnswer: 37.5% (180 questions)
+- Unknown: 12.9% (62 questions)
+- Matching: 2.5% (12 questions)
+
+# Guide d’installation
+
+Vous pouvez télécharger le projet soit via un dossier qui vous sera envoyé en format zip, ou bien en “clonant” le repository associé.
+
+Pour installer les dependances nécessaires pour le projet, executez la commande suivante:
 
 ```bash
 npm install
+
 ```
 
-## 📚 Utilisation
+## Guide d’utilisation
+
+Chacune des fonctionnalités demandées ont été réalisés et sont présentées dans cette partie.
+
+Leur nom de code est indiqué entre parenthèse et un exemple d’utilisation est associé.  
 
 ### Commande de recherche (EF01)
 
@@ -39,13 +379,14 @@ node index.js search ShortAnswer "adverb"
 node index.js search MultipleChoice -v          # Mode verbose (affiche les réponses)
 node index.js search ShortAnswer -l 5           # Limite à 5 résultats
 node index.js search -d ./data                  # Spécifier un autre répertoire
+
 ```
 
-#### Options de recherche
+### Options de recherche
 
-- `-v, --verbose` : Affiche les réponses détaillées pour chaque question
-- `-l, --limit <nombre>` : Limite le nombre de résultats affichés
-- `-d, --dataDir <dir>` : Spécifie le répertoire contenant les fichiers GIFT (défaut: `./data`)
+- `v, --verbose` : Affiche les réponses détaillées pour chaque question
+- `l, --limit <nombre>` : Limite le nombre de résultats affichés
+- `d, --dataDir <dir>` : Spécifie le répertoire contenant les fichiers GIFT (défaut: `./data`)
 
 ### Commande de statistiques
 
@@ -53,9 +394,11 @@ Afficher les statistiques de la banque de questions :
 
 ```bash
 node index.js stats
+
 ```
 
 Cette commande affiche :
+
 - Nombre total de fichiers et de questions
 - Moyenne de questions par fichier
 - Répartition par type de question (avec graphique en barres)
@@ -67,128 +410,20 @@ Lister tous les types de questions disponibles :
 
 ```bash
 node index.js types
-```
-
-## 📊 Types de Questions Supportés
-
-Le parser reconnaît automatiquement les types suivants :
-
-| Type | Description | Exemple GIFT |
-|------|-------------|--------------|
-| **MultipleChoice** | Questions à choix multiples | `{~wrong~=correct~wrong}` ou `{1:MC:~=correct~wrong}` |
-| **ShortAnswer** | Questions à réponse courte | `{=answer1 =answer2}` ou `{1:SA:=answer}` |
-| **Matching** | Questions d'association | `{=item1->match1 =item2->match2}` |
-| **TrueFalse** | Questions vrai/faux | `{TRUE}` ou `{FALSE}` |
-| **Numerical** | Questions numériques | `{#42}` |
-| **Unknown** | Type non reconnu | - |
-
-## 🏗️ Architecture
-
-### Structure du Projet
 
 ```
-projet/
-├── index.js           # Interface CLI (Caporal)
-├── giftParser.js      # Parser GIFT et fonctions de recherche
-├── data/              # Banque de questions GIFT
-├── package.json       # Dépendances
-└── README.md          # Documentation
-```
-
-### Modules Principaux
-
-#### `giftParser.js`
-
-Fonctions exportées :
-- `parseGiftFile(filePath)` : Parse un fichier GIFT et extrait les questions
-- `searchQuestions(dataDir, type, keyword)` : Recherche des questions selon critères
-- `getQuestionStats(dataDir)` : Calcule les statistiques de la banque
-- `getAvailableTypes(dataDir)` : Liste tous les types de questions disponibles
-
-#### `index.js`
-
-Commandes CLI :
-- `search [type] [keyword]` : Recherche et visualisation (EF01)
-- `stats` : Affichage des statistiques
-- `types` : Liste des types disponibles
-
-## 📝 Format GIFT
-
-Les fichiers GIFT sont structurés comme suit :
-
-```gift
-// Commentaire
-::Titre de la question::Texte de la question {
-  ~réponse incorrecte
-  =réponse correcte
-  ~autre réponse incorrecte
-}
-
-::Autre question::[html]Question avec HTML {
-  =réponse
-}
-```
-
-### Exemples de Questions
-
-**Multiple Choice:**
-```gift
-::Q1::Quelle est la capitale de la France? {
-  ~Londres
-  =Paris
-  ~Berlin
-  ~Madrid
-}
-```
-
-**Short Answer:**
-```gift
-::Q2::Complétez la phrase. {
-  =réponse correcte
-  =autre réponse correcte
-}
-```
-
-**Matching:**
-```gift
-::Q3::Associez les éléments. {
-  =France -> Paris
-  =Allemagne -> Berlin
-  =Italie -> Rome
-}
-```
-
-## 🎯 Conformité aux Exigences
-
-### Exigences Fonctionnelles Implémentées
-
-- ✅ **EF01** : Recherche et visualisation des questions
-  - Recherche par type de question
-  - Recherche par mots-clés
-  - Affichage détaillé ou simplifié
-  - Filtres multiples combinables
-
-### Exigences Non Fonctionnelles
-
-- ✅ **ENF02** : Compatible avec Windows, Linux, macOS (Node.js)
-- ✅ **ENF04** : Code modulaire et maintenable
-- ✅ **ENF05** : Interface CLI intuitive avec aide contextuelle
-- ✅ **ENF06** : Respect des normes GIFT
-- ✅ **ENF07** : Architecture extensible
-
-## 📈 Statistiques de la Banque Actuelle
-
-- **47 fichiers** GIFT
-- **480 questions** au total
-- **~10 questions** par fichier en moyenne
-
-Répartition par type :
-- MultipleChoice: 47.1% (226 questions)
-- ShortAnswer: 37.5% (180 questions)
-- Unknown: 12.9% (62 questions)
-- Matching: 2.5% (12 questions)
 
 ### Commandes de composition d'examen (EF02)
+
+Il est spécifié dans le cahier des charges que cet outil doit gérer la création d’un examen.
+
+L’utilisateur peut donc créer un examen à la fois. 
+
+L’examen est stocké dans un fichier temporaire en format json.
+
+Pour le sauvegarder dans le format GIFT pour moodle (EF03), il doit avoir rempli toutes les conditions.
+
+Une fois sauvegardé, l’utilisateur peut créer un nouvel examen.
 
 Composer un examen en sélectionnant des questions :
 
@@ -215,18 +450,27 @@ node index.js exam-validate
 
 # Effacer l'examen en cours
 node index.js exam-clear
+
 ```
 
-#### Contraintes de composition
+Si vous souhaitez tester rapidement, vous pouvez initialiser un examen et ajouter 15 questions au hasard via cette commande:
+
+```bash
+node index.js exam-init "My Exam" && node index.js exam-add "EM-U4-p32_33-Review.gift" "EM U4 p32 Review 1 MultiChoice" && node index.js exam-add "EM-U4-p32_33-Review.gift" "EM U4 p32 Review 2 OpenCloze" && node index.js exam-add "EM-U4-p32_33-Review.gift" "EM U4 p33 Review 3 Word formation" && node index.js exam-add "EM-U4-p32_33-Review.gift" "EM U4 p33 Review 4.1 more irritating than" && node index.js exam-add "EM-U4-p32_33-Review.gift" "EM U4 p33 Review 4.2 interesting for/to" && node index.js exam-add "EM-U4-p32_33-Review.gift" "EM U4 p33 Review 4.3 so excited by/about" && node index.js exam-add "EM-U42-Ultimate.gift" "EM U42 Ultimate q1" && node index.js exam-add "EM-U42-Ultimate.gift" "EM U42 Ultimate q2" && node index.js exam-add "EM-U5-p34-Gra-Expressions_of_quantity.gift" "EM U5 p34 Gra1.1" && node index.js exam-add "EM-U5-p34-Gra-Expressions_of_quantity.gift" "EM U5 p34 Gra1.2" && node index.js exam-add "EM-U5-p34-Gra-Expressions_of_quantity.gift" "EM U5 p34 Gra1.3" && node index.js exam-add "EM-U5-p34-Gra-Expressions_of_quantity.gift" "EM U5 p34 Gra1.4" && node index.js exam-add "EM-U5-p34-Gra-Expressions_of_quantity.gift" "EM U5 p34 Gra1.5" && node index.js exam-add "EM-U5-p34-Gra-Expressions_of_quantity.gift" "EM U5 p34 Gra1.6" && node index.js exam-add "EM-U5-p34-Gra-Expressions_of_quantity.gift" "EM U5 p34 Gra1.7"
+
+```
+
+### Contraintes de composition
 
 - **Minimum** : 15 questions
 - **Maximum** : 20 questions
 - **Unicité** : Aucune question dupliquée
 - Les questions sont stockées dans `.current_exam.json` (fichier temporaire)
 
-#### Gestion des erreurs
+### Gestion des erreurs
 
 Le système détecte et signale automatiquement :
+
 - ✗ **Question dupliquée** : "Cette question est déjà dans l'examen. Veuillez en choisir une autre."
 - ✗ **Limite dépassée** : "Un examen ne peut contenir plus de 20 questions. Veuillez retirer des questions avant d'en ajouter."
 - ✗ **Question inexistante** : "La question '[titre]' n'a pas été trouvée dans [fichier]"
@@ -252,18 +496,20 @@ node index.js exam-generate -f
 # Aperçu du fichier GIFT sans le sauvegarder
 node index.js exam-preview
 node index.js exam-preview -l 100  # Afficher 100 lignes
+
 ```
 
-#### Format du fichier généré
+### Format du fichier généré
 
 Le fichier GIFT généré contient :
+
 - **En-tête** : Métadonnées (titre, date, nombre de questions)
 - **Questions** : Au format GIFT standard avec commentaires
 - **Pied de page** : Résumé de l'examen
 
 Exemple de sortie :
 
-```gift
+```
 // ========================================
 // Examen Test GL02
 // ========================================
@@ -282,9 +528,10 @@ Exemple de sortie :
   ~wrong answer
   =right answer
 }
+
 ```
 
-#### Gestion des erreurs de génération
+### Gestion des erreurs de génération
 
 - ✗ **Examen vide** : "L'examen est vide. Impossible de générer un fichier GIFT."
 - ✗ **Examen invalide** : "L'examen n'est pas valide. Impossible de générer le fichier GIFT."
@@ -301,116 +548,529 @@ Générer des fichiers VCard pour les enseignants conformes aux normes RFC 6350 
 node index.js vcard-generate --firstName Jean --lastName Dupont
 
 # Générer avec email et téléphone
-node index.js vcard-generate \
-  --firstName Jean \
-  --lastName Dupont \
-  --email jean.dupont@sryem.se \
+node index.js vcard-generate \\
+  --firstName Jean \\
+  --lastName Dupont \\
+  --email jean.dupont@sryem.se \\
   --phone "+46 123 456 789"
 
 # Générer avec toutes les informations
-node index.js vcard-generate \
-  --firstName "Dr. Marie" \
-  --lastName Martin \
-  --email marie.martin@sryem.se \
-  --phone "+46 12 345 6789" \
-  --mobile "+46 70 123 4567" \
-  --organization "SRYEM" \
-  --department "Département d'anglais" \
-  --title "Professeur d'anglais" \
-  --role "Responsable pédagogique" \
-  --city "Sealand City" \
-  --country "Sealand" \
-  --note "Spécialiste en évaluation" \
+node index.js vcard-generate \\
+  --firstName "Dr. Marie" \\
+  --lastName Martin \\
+  --email marie.martin@sryem.se \\
+  --phone "+46 12 345 6789" \\
+  --mobile "+46 70 123 4567" \\
+  --organization "SRYEM" \\
+  --department "Département d'anglais" \\
+  --title "Professeur d'anglais" \\
+  --role "Responsable pédagogique" \\
+  --city "Sealand City" \\
+  --country "Sealand" \\
+  --note "Spécialiste en évaluation" \\
   -o ./vcards
 
 # Aperçu de la VCard sans la sauvegarder
-node index.js vcard-preview \
-  --firstName Jean \
-  --lastName Dupont \
+node index.js vcard-preview \\
+  --firstName Jean \\
+  --lastName Dupont \\
   --email jean.dupont@sryem.se
 
 # Forcer l'écrasement d'un fichier existant
 node index.js vcard-generate --firstName Jean --lastName Dupont -f
+
 ```
 
-#### Champs VCard disponibles
+### Simulation de passation d'examen (EF05)
 
-| Champ | Option | Obligatoire | Description |
-|-------|--------|-------------|-------------|
-| Prénom | `--firstName` | ✓ | Prénom de l'enseignant |
-| Nom | `--lastName` | ✓ | Nom de famille |
-| Email | `--email` | | Adresse email (validée) |
-| Téléphone | `--phone` | | Numéro de téléphone professionnel |
-| Mobile | `--mobile` | | Numéro de téléphone portable |
-| Organisation | `--organization` | | Établissement (défaut: SRYEM) |
-| Département | `--department` | | Service/département |
-| Titre | `--title` | | Fonction (défaut: Enseignant) |
-| Rôle | `--role` | | Rôle professionnel |
-| Ville | `--city` | | Ville |
-| Pays | `--country` | | Pays (défaut: Sealand) |
-| Note | `--note` | | Informations complémentaires |
+### Description
 
-#### Format VCard généré
+La fonctionnalité de simulation permet de passer un examen à partir d'un fichier GIFT et d'obtenir un bilan détaillé des résultats.
 
-Conforme à **RFC 6350** (vCard 4.0) et **RFC 6868** (encodage des paramètres) :
+### Commande de base
 
-```vcard
-BEGIN:VCARD
-VERSION:4.0
-FN:Jean Dupont
-N:Dupont;Jean;;;
-EMAIL;TYPE=work:jean.dupont@sryem.se
-TEL;TYPE=work,voice:+46 123 456 789
-ORG:SRYEM - Ministère de l'Éducation nationale de Sealand
-TITLE:Enseignant
-REV:20251124T123730Z
-PRODID:-//SRYEM//GIFT CLI VCard Generator//FR
-END:VCARD
+```bash
+node index.js simuler <chemin-vers-fichier.gift>
+
 ```
 
-**Fonctionnalités RFC :**
-- ✓ Line folding (lignes > 75 caractères)
-- ✓ Encodage des caractères spéciaux (RFC 6868)
-- ✓ Format de date ISO 8601 pour REV
-- ✓ Types de propriétés standards (work, cell, etc.)
+### Options
 
-#### Gestion des erreurs VCard
+- `-save <fichier>` : Sauvegarder automatiquement le bilan dans un fichier
+    
+    ```bash
+    node index.js simuler output/my_exam_2025-12-05.gift --save resultats.txt
+    
+    ```
+    
 
-- ✗ **Champ manquant** : "Le nom de famille de l'enseignant est obligatoire. Veuillez le spécifier."
-- ✗ **Email invalide** : "L'email fourni n'est pas valide. Veuillez utiliser un format standard (ex. : nom@domaine.se)."
-- ✗ **Téléphone invalide** : "Le numéro de téléphone fourni n'est pas valide."
-- ✗ **Permission refusée** : "Impossible d'écrire le fichier. Vérifiez les permissions du dossier."
-- ✗ **Fichier existe** : "Le fichier existe déjà. Utilisez --force pour écraser."
+### Exemple d'utilisation
 
-## 🔧 Dépendances
+1. **Lancer une simulation simple**
+    
+    ```bash
+    node index.js simuler output/my_exam_2025-12-05.gift
+    
+    ```
+    
+2. **Lancer une simulation et sauvegarder les résultats**
+    
+    ```bash
+    node index.js simuler output/my_exam_2025-12-05.gift --save mes_resultats.txt
+    
+    ```
+    
 
-- `@caporal/core` : Framework CLI
-- `chalk` : Colorisation des sorties terminal
-- `fs` / `path` : Gestion des fichiers (built-in Node.js)
+### Types de questions supportées
 
-## 🚧 Prochaines Étapes
+### 1. Questions à choix multiples (MultipleChoice)
 
-### Fonctionnalités implémentées
+- Format simple avec un seul choix
+- Format avec plusieurs trous (cloze tests)
+- Affichage numéroté des options
+- Saisie du numéro de l'option choisie
 
-- ✅ **EF01** : Recherche et visualisation ✓ COMPLET
-- ✅ **EF02** : Sélection et composition d'examens ✓ COMPLET
-- ✅ **EF03** : Génération de fichiers GIFT ✓ COMPLET
-- ✅ **EF04** : Création de fichiers VCard (RFC 6350/6868) ✓ COMPLET
-- ✅ **EF06** : Vérification de la qualité (unicité, 15-20 questions) ✓ COMPLET
-- ✅ **EF09** : Gestion des erreurs ✓ COMPLET
+### Affichage des résultats
 
-### Fonctionnalités restantes
+Le système affiche un bilan détaillé comprenant :
 
-- **EF05** : Simulation de passation d'examens
-- **EF07** : Profil des examens (histogrammes)
-- **EF08** : Comparaison des profils
-- **EF10** : Import/Export de données
+1. **Par question :**
+    - Titre et type de question
+    - Réponse de l'étudiant
+    - Indication correcte (✅) ou incorrecte (❌)
+    - Affichage des bonnes réponses en cas d'erreur
+2. **Bilan final :**
+    - Score total (nombre de points / nombre de questions)
+    - Pourcentage de réussite
+    - Note sur 20
+    - Message d'encouragement
+
+**Exemple de résultat:**
+
+```
+📊 RÉSULTATS DE L'EXAMEN
+======================================================================
+
+Question 1: EM U4 p32 Review 1 MultiChoice
+Type: MultipleChoice
+Score: 89% (8/9 trous corrects)
+  ✅ Trou 1: similar to
+  ✅ Trou 2: took
+  ❌ Trou 3: concentration
+     Réponse(s) correcte(s): attention
+  ...
+
+======================================================================
+📈 BILAN FINAL
+======================================================================
+Score: 13.45/15
+Pourcentage: 89.67%
+Note: 17.93/20
+
+🎉 Excellent travail !
+
+```
+
+### Sauvegarde des résultats
+
+Après la simulation, vous pouvez :
+
+1. Sauvegarder automatiquement avec l'option `-save`
+2. Choisir de sauvegarder interactivement
+3. Spécifier un nom de fichier personnalisé
+
+Le fichier de résultats contient :
+
+- Date et heure de passage
+- Score et note
+- Détail complet de chaque question
+- Réponses correctes et incorrectes
+
+### Gestion des erreurs
+
+### Fichier introuvable
+
+```
+✗ Le fichier examen1.gift est introuvable. Vérifiez le chemin.
+
+```
+
+**Solution :** Vérifiez que le chemin du fichier est correct et que le fichier existe.
+
+### Réponse invalide
+
+```
+⚠️  Choix invalide. Veuillez réessayer.
+
+```
+
+**Solution :** Pour les questions à choix multiple, entrez un numéro valide correspondant aux options affichées.
+
+### Aucune question trouvée
+
+```
+✗ Aucune question trouvée dans le fichier GIFT.
+
+```
+
+**Solution :** Vérifiez que le fichier GIFT contient des questions au format correct.
+
+### Fonctionnalités avancées
+
+Questions multi-lignes
+
+Le système gère automatiquement les questions au format multi-ligne :
+
+```
+::Question::What's the answer? {
+  ~wrong answer
+  ~another wrong answer
+  =right answer
+}
+
+```
+
+### Réponses multiples acceptées
+
+Pour les questions à réponse courte, plusieurs réponses peuvent être correctes :
+
+```
+::Question::The answer is {=forty two=42=forty-two}
+
+```
+
+### Formats HTML
+
+Le système nettoie automatiquement les balises HTML pour un affichage propre :
+
+- `<b>texte</b>` → texte en gras affiché normalement
+- `<br>` → saut de ligne
+- `<i>texte</i>` → texte italique affiché normalement
+
+### Notes importantes
+
+1. **Sensibilité à la casse :** Les réponses courtes sont comparées en ignorant la casse (majuscules/minuscules).
+2. **Questions complexes :** Les questions avec plusieurs trous reçoivent un score proportionnel au nombre de trous corrects.
+3. **Format GIFT :** Seuls les fichiers au format GIFT sont supportés (pas JSON).
+4. **Interactivité :** La simulation est interactive et nécessite la présence de l'utilisateur pour répondre aux questions.
+
+### Verifier le format des examens (EF06):
+
+Utilisation:
+
+```bash
+   node index.js verifier <fichier.gift>
+```
+
+Exemple de sortie:
+
+```bash
+info: 
+🔍 VÉRIFICATION DE LA QUALITÉ DE L'EXAMEN
+
+info: Fichier: output/my_exam_2025-12-05.gift
+
+info: 📊 Statistiques:
+info:    Questions: 15
+info:    Types: MultipleChoice, ShortAnswer
+info:      - MultipleChoice: 9
+info:      - ShortAnswer: 6
+info: 
+info: ✅ Examen conforme aux règles du SRYEM
+```
+
+### Profil des examens (EF07)
+
+**Statistiques**:
+
+- Nombre de types différents
+- Type le plus fréquent
+- Répartition détaillée
+
+**Utilisation :**
+
+```bash
+# Afficher dans le terminal*
+
+node index.js profil output/my_exam_2025-12-05.gift
+
+# Sauvegarder dans un fichier*
+
+node index.js profil output/my_exam_2025-12-05.gift --sortie profil.txt
+
+# Analyser la banque de questions*
+
+node index.js profil data/EM-U4-p32_33-Review.gift
+```
+
+**Exemple de sortie :**
+
+```bash
+📊 PROFIL DE L'EXAMEN
+
+══════════════════════════════════════════════════════════════════
+
+HISTOGRAMME DES TYPES DE QUESTIONS
+
+══════════════════════════════════════════════════════════════════
+
+MultipleChoice       ( 9) │████████████████████████████  │ 60.0%
+
+ShortAnswer          ( 6) │███████████████████           │ 40.0%
+
+──────────────────────────────────────────────────────────────────
+
+Total: 15 questions
+```
+
+### Comparaison des profils d’examens (EF08)
+
+**Analyse complète**
+
+- Support fichier unique ou dossier entier
+- Agrégation de tous les fichiers GIFT de la banque
+- Calcul automatique des pourcentages
+
+**Comparaison détaillée**
+
+- Écarts en points de pourcentage
+- Tri par importance des différences
+- Tableau comparatif clair
+
+**Recommandations intelligentes**
+
+- Détection écarts significatifs (> 10%)
+- Sur-représentation (> +15%)
+- Sous-représentation (< -15%)
+
+### Utilisation :
+
+```bash
+# Comparer avec la banque par défaut (./data)
+node index.js comparer output/my_exam_2025-12-05.gift
+
+# Spécifier une autre banque
+node index.js comparer output/my_exam_2025-12-05.gift --banque data/
+
+# Sauvegarder le rapport
+node index.js comparer output/my_exam_2025-12-05.gift --sortie rapport.txt
+
+```
+
+### Exemple de résultat :
+
+```
+📊 COMPARAISON DES PROFILS
+
+Type                 Examen    Banque    Écart
+──────────────────────────────────────────────────────────────────
+MultipleChoice          60.0%     53.2%     +6.8%
+ShortAnswer             40.0%     42.4%     -2.4%
+
+✅ Votre examen présente une répartition similaire à la banque.
+   Aucun écart significatif détecté (> 10%).
+
+```
+
+### Import / Export de données (EF10)
+
+**Import**
+
+- Validation format GIFT complète
+- Vérification permissions et extension
+- Statistiques par type de question
+- Détection questions invalides
+- Option d'import dans la banque
+
+**Export**
+
+- Export vers fichier spécifique ou dossier
+- Validation du source avant export
+- Protection contre écrasement
+- Vérification des permissions
+
+**Sécurité**
+
+- Toutes les vérifications nécessaires
+- Pas d'écrasement accidentel
+- Messages d'erreur clairs
+- Validation complète
+
+### Exemples d'utilisation :
+
+```bash
+# Valider un fichier GIFT
+node index.js importer output/my_exam_2025-12-05.gift
+
+# Importer dans la banque
+node index.js importer mon_examen.gift --banque
+
+# Exporter vers un fichier
+node index.js exporter output/exam.gift exports/exam_final.gift
+
+# Exporter vers un dossier
+node index.js exporter output/exam.gift exports/
+
+```
+
+### Exigences Non Fonctionnelles - Conformité
+
+### ENF01 - Performance
+
+**Exigence :** Répondre rapidement aux requêtes, même avec une banque volumineuse.
+
+**Justification :**
+
+- Parsing optimisé avec regex efficaces (~425 questions en <1s)
+- Pas de chargement en mémoire de toute la banque (lecture à la demande)
+- Recherche indexée par fichier (parallélisable)
+- Opérations courantes (search, stats) : <2 secondes
+- Pas de dépendances lourdes ralentissant le démarrage
+
+### ENF02 - Compatibilité
+
+**Exigence :** Compatible Windows, Linux, macOS.
+
+**Justification :**
+
+- Node.js multi-plateforme (testé sur macOS, compatible Windows/Linux)
+- Utilisation exclusive de modules Node.js natifs (`fs`, `path`, `readline`)
+- Chemins de fichiers gérés avec `path.join()` (portabilité)
+- Pas de commandes shell spécifiques à un OS
+- Framework CLI (`@caporal/core`) cross-platform
+
+### ENF03 - Sécurité
+
+**Exigence :** Protection des données, stockage sécurisé.
+
+**Justification :**
+
+- Validation stricte des entrées (chemins, emails, formats)
+- Vérification des permissions avant lecture/écriture
+- Protection contre écrasement accidentel (confirmation requise)
+- Pas de stockage de données sensibles en clair
+- Fichiers générés avec permissions par défaut du système
+- Validation GIFT empêche injection de code malveillant
+- Aucune connexion réseau (pas de risque de fuite)
+
+### ENF04 - Maintenabilité
+
+**Exigence :** Code modulaire pour mises à jour faciles.
+
+**Justification :**
+
+- Architecture modulaire : 9 modules indépendants
+- Séparation claire des responsabilités (parser, generator, validator...)
+- Fonctions exportées réutilisables
+- Pas de duplication de code (DRY principle)
+- Nommage clair et cohérent
+- Chaque module ~100-400 lignes (taille gérable)
+- Ajout de nouvelles fonctionnalités sans modifier l'existant
+
+### ENF05 - Accessibilité
+
+**Exigence :** Interface intuitive, documentation claire.
+
+**Justification :**
+
+- CLI avec aide contextuelle (`-help` sur chaque commande)
+- Messages d'erreur explicites et actionnables
+- Feedback visuel (couleurs, icônes, progression)
+- Commandes nommées intuitivement (`search`, `add-question`, `verifier`)
+- Guide de démarrage rapide dans README
+- Exemples d'utilisation pour chaque commande
+- Workflow complet documenté
+- Mode interactif pour les opérations complexes (add-question)
+
+### ENF06 - Conformité aux normes
+
+**Exigence :** Respect GIFT et RFC 6350/6868.
+
+**Justification :**
+
+**Format GIFT :**
+
+- Parser conforme à la spécification GIFT (Moodle)
+- Support de tous les types : MC, SA, Matching, TrueFalse, Numerical
+- Gestion des formats inline et multi-lignes
+- Préservation des feedbacks et métadonnées
+- Génération compatible Moodle (testé avec imports)
+
+**RFC 6350 (VCard 4.0) :**
+
+- VERSION:4.0 obligatoire
+- Champs FN et N conformes
+- Format de date ISO 8601 (REV)
+- PRODID personnalisé
+
+**RFC 6868 (Encodage) :**
+
+- Line folding à 75 caractères
+- Encodage UTF-8
+- Échappement des caractères spéciaux
+
+### ENF07 - Extensibilité
+
+**Exigence :** Architecture permettant ajout de fonctionnalités sans refonte.
+
+**Justification :**
+
+- Architecture plugin-ready (modules indépendants)
+- Interface CLI extensible (ajout de commandes facile)
+- Parser GIFT découple format des traitements
+- Système de types de questions extensible
+- Modules de profil/comparaison réutilisables
+- Exemple : ajout de EF05-EF10 sans modifier EF01-EF04
+- Format JSON intermédiaire (`.current_exam.json`) permet ajout de métadonnées
+- Pas de couplage fort entre modules
+
+### ENF08 - Documentation technique
+
+**Exigence :** Documentation complète pour développeurs et utilisateurs.
+
+**Justification :**
+
+**Pour utilisateurs finaux :**
+
+- [README.md](http://readme.md/) complet (691 lignes)
+- Guide d'installation
+- 25+ exemples d'utilisation
+- Workflow complet étape par étape
+- Aide contextuelle intégrée (`-help`)
+
+**Pour développeurs :**
+
+- Architecture détaillée avec tous les modules
+- Fonctions exportées documentées
+- Commentaires dans le code
+- Structure du projet claire
+- Exemples de formats GIFT
+- Exigences système spécifiées
+
+## Informations supplémentaires:
+
+Le format GIFT original que le client avait spécifié était le suivant:
+
+Format GIFT
+gift-file = *(question-block / comment)
+question-block = question-title question-content question-answers
+question-title = "::" question-id "::" *(WSP / VCHAR) CRLF
+question-id = 1*(ALPHA / DIGIT / "_")
+question-content = *(WSP / VCHAR) CRLF
+question-answers = "{" *(answer) "}"
+answer = (correct-answer / incorrect-answer) CRLF
+correct-answer = "=" answer-text "#" feedback CRLF
+incorrect-answer = "~" answer-text "#" feedback CRLF
+answer-text = *(WSP / VCHAR)
+feedback = *(WSP / VCHAR)
+comment = "//" *(WSP / VCHAR) CRLF
+
+Celui ci a du être modifié (et suit la structure indiqué dans la partie EF03) puisque ce format simplifié ne pouvait pas géré les questions qui attendent plusieurs réponses comme les textes à trous.
 
 ## 👥 Auteurs
 
-Projet développé pour le SRYEM (Ministère de l'Éducation nationale de Sealand)
+EKIP - Projet développé pour le SRYEM (Ministère de l'Éducation nationale de Sealand)
 
 ## 📄 Licence
 
 À définir selon les politiques du SRYEM
-
