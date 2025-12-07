@@ -2,12 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { parseGiftFile } = require("./giftParser");
 
-/**
- * Import a GIFT file and validate it
- */
 function importGiftFile(filePath) {
   try {
-    // Check if file exists
     if (!fs.existsSync(filePath)) {
       return {
         success: false,
@@ -16,7 +12,6 @@ function importGiftFile(filePath) {
       };
     }
     
-    // Check if file is readable
     try {
       fs.accessSync(filePath, fs.constants.R_OK);
     } catch (err) {
@@ -27,7 +22,6 @@ function importGiftFile(filePath) {
       };
     }
     
-    // Check file extension
     if (!filePath.toLowerCase().endsWith(".gift")) {
       return {
         success: false,
@@ -36,7 +30,6 @@ function importGiftFile(filePath) {
       };
     }
     
-    // Check if file is empty
     const stats = fs.statSync(filePath);
     if (stats.size === 0) {
       return {
@@ -46,10 +39,8 @@ function importGiftFile(filePath) {
       };
     }
     
-    // Parse the GIFT file
     const questions = parseGiftFile(filePath);
     
-    // Validate questions
     if (!questions || questions.length === 0) {
       return {
         success: false,
@@ -58,13 +49,11 @@ function importGiftFile(filePath) {
       };
     }
     
-    // Count questions by type
     const typeCount = {};
     const validQuestions = [];
     const invalidQuestions = [];
     
     questions.forEach((q, idx) => {
-      // Basic validation
       if (q.title && q.type && q.content) {
         validQuestions.push(q);
         typeCount[q.type] = (typeCount[q.type] || 0) + 1;
@@ -77,7 +66,6 @@ function importGiftFile(filePath) {
       }
     });
     
-    // Check if we have valid questions
     if (validQuestions.length === 0) {
       return {
         success: false,
@@ -106,12 +94,8 @@ function importGiftFile(filePath) {
   }
 }
 
-/**
- * Export a GIFT file to a destination
- */
 function exportGiftFile(sourceFilePath, destinationPath) {
   try {
-    // Check if source file exists
     if (!fs.existsSync(sourceFilePath)) {
       return {
         success: false,
@@ -120,7 +104,6 @@ function exportGiftFile(sourceFilePath, destinationPath) {
       };
     }
     
-    // Validate source file
     const importResult = importGiftFile(sourceFilePath);
     if (!importResult.success) {
       return {
@@ -130,26 +113,21 @@ function exportGiftFile(sourceFilePath, destinationPath) {
       };
     }
     
-    // Determine destination
     let destFile;
     const destStats = fs.existsSync(destinationPath) ? fs.statSync(destinationPath) : null;
     
     if (destStats && destStats.isDirectory()) {
-      // Destination is a directory
       destFile = path.join(destinationPath, path.basename(sourceFilePath));
     } else if (destinationPath.endsWith("/") || destinationPath.endsWith("\\")) {
-      // Destination looks like a directory but doesn't exist
       return {
         success: false,
         error: `Le dossier de destination ${destinationPath} n'existe pas.`,
         errorType: "DEST_DIR_NOT_FOUND",
       };
     } else {
-      // Destination is a file path
       destFile = destinationPath;
       const destDir = path.dirname(destFile);
       
-      // Check if destination directory exists
       if (!fs.existsSync(destDir)) {
         return {
           success: false,
@@ -159,7 +137,6 @@ function exportGiftFile(sourceFilePath, destinationPath) {
       }
     }
     
-    // Check if destination directory is writable
     const destDir = path.dirname(destFile);
     try {
       fs.accessSync(destDir, fs.constants.W_OK);
@@ -171,7 +148,6 @@ function exportGiftFile(sourceFilePath, destinationPath) {
       };
     }
     
-    // Check if destination file already exists
     if (fs.existsSync(destFile)) {
       return {
         success: false,
@@ -180,7 +156,6 @@ function exportGiftFile(sourceFilePath, destinationPath) {
       };
     }
     
-    // Read source and copy to destination
     const content = fs.readFileSync(sourceFilePath, "utf8");
     fs.writeFileSync(destFile, content, "utf8");
     
@@ -200,18 +175,13 @@ function exportGiftFile(sourceFilePath, destinationPath) {
   }
 }
 
-/**
- * Copy a GIFT file to the data directory (import to bank)
- */
 function importToBank(filePath, bankDir = "./data") {
   try {
-    // Validate source file
     const importResult = importGiftFile(filePath);
     if (!importResult.success) {
       return importResult;
     }
     
-    // Check if bank directory exists
     if (!fs.existsSync(bankDir)) {
       return {
         success: false,
@@ -220,7 +190,6 @@ function importToBank(filePath, bankDir = "./data") {
       };
     }
     
-    // Check if directory is writable
     try {
       fs.accessSync(bankDir, fs.constants.W_OK);
     } catch (err) {
@@ -231,11 +200,9 @@ function importToBank(filePath, bankDir = "./data") {
       };
     }
     
-    // Generate destination filename
     const fileName = path.basename(filePath);
     const destFile = path.join(bankDir, fileName);
     
-    // Check if file already exists in bank
     if (fs.existsSync(destFile)) {
       return {
         success: false,
@@ -244,7 +211,6 @@ function importToBank(filePath, bankDir = "./data") {
       };
     }
     
-    // Copy file to bank
     const content = fs.readFileSync(filePath, "utf8");
     fs.writeFileSync(destFile, content, "utf8");
     
@@ -271,4 +237,3 @@ module.exports = {
   exportGiftFile,
   importToBank,
 };
-

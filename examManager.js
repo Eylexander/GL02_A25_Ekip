@@ -2,12 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { parseGiftFile } = require("./giftParser");
 
-// Path to store current exam composition
 const EXAM_FILE = ".current_exam.json";
 
-/**
- * Load the current exam composition from disk
- */
 function loadCurrentExam() {
   if (fs.existsSync(EXAM_FILE)) {
     try {
@@ -21,9 +17,6 @@ function loadCurrentExam() {
   return createEmptyExam();
 }
 
-/**
- * Save the current exam composition to disk
- */
 function saveCurrentExam(exam) {
   try {
     fs.writeFileSync(EXAM_FILE, JSON.stringify(exam, null, 2), "utf8");
@@ -34,9 +27,6 @@ function saveCurrentExam(exam) {
   }
 }
 
-/**
- * Create an empty exam structure
- */
 function createEmptyExam() {
   return {
     title: "Nouvel examen",
@@ -50,9 +40,6 @@ function createEmptyExam() {
   };
 }
 
-/**
- * Initialize a new exam
- */
 function initExam(title = "Nouvel examen") {
   const exam = createEmptyExam();
   exam.title = title;
@@ -60,9 +47,6 @@ function initExam(title = "Nouvel examen") {
   return exam;
 }
 
-/**
- * Get question by file and title from the data directory
- */
 function getQuestionByReference(dataDir, file, title) {
   const filePath = path.join(dataDir, file);
   
@@ -88,18 +72,13 @@ function getQuestionByReference(dataDir, file, title) {
   };
 }
 
-/**
- * Add a question to the exam
- */
 function addQuestion(dataDir, file, title) {
   const exam = loadCurrentExam();
   
-  // Check if exam exists
   if (!exam || !exam.questions) {
-    throw new Error("Aucun examen en cours. Utilisez 'exam-init' pour créer un nouvel examen.");
+    throw new Error("Aucun examen en cours. Utilisez 'exam-init' pour créer un nouvel examen."    );
   }
   
-  // Check maximum limit
   if (exam.questions.length >= exam.metadata.maxQuestions) {
     throw new Error(
       `Un examen ne peut contenir plus de ${exam.metadata.maxQuestions} questions. ` +
@@ -107,7 +86,6 @@ function addQuestion(dataDir, file, title) {
     );
   }
   
-  // Check for duplicates
   const isDuplicate = exam.questions.some(
     q => q.file === file && q.title === title
   );
@@ -118,10 +96,8 @@ function addQuestion(dataDir, file, title) {
     );
   }
   
-  // Get the question details
   const question = getQuestionByReference(dataDir, file, title);
   
-  // Add question
   exam.questions.push(question);
   exam.modifiedAt = new Date().toISOString();
   
@@ -129,9 +105,6 @@ function addQuestion(dataDir, file, title) {
   return exam;
 }
 
-/**
- * Remove a question from the exam by index (1-based)
- */
 function removeQuestion(index) {
   const exam = loadCurrentExam();
   
@@ -139,7 +112,6 @@ function removeQuestion(index) {
     throw new Error("L'examen est vide. Aucune question à retirer.");
   }
   
-  // Convert to 0-based index
   const idx = index - 1;
   
   if (idx < 0 || idx >= exam.questions.length) {
@@ -156,16 +128,10 @@ function removeQuestion(index) {
   return { exam, removed };
 }
 
-/**
- * Get the current exam
- */
 function getCurrentExam() {
   return loadCurrentExam();
 }
 
-/**
- * Clear the current exam
- */
 function clearExam() {
   if (fs.existsSync(EXAM_FILE)) {
     fs.unlinkSync(EXAM_FILE);
@@ -173,15 +139,11 @@ function clearExam() {
   return createEmptyExam();
 }
 
-/**
- * Validate the current exam
- */
 function validateExam() {
   const exam = loadCurrentExam();
   const errors = [];
   const warnings = [];
   
-  // Check minimum questions
   if (exam.questions.length < exam.metadata.minQuestions) {
     errors.push(
       `L'examen doit contenir au moins ${exam.metadata.minQuestions} questions. ` +
@@ -189,7 +151,6 @@ function validateExam() {
     );
   }
   
-  // Check maximum questions
   if (exam.questions.length > exam.metadata.maxQuestions) {
     errors.push(
       `L'examen ne peut contenir plus de ${exam.metadata.maxQuestions} questions. ` +
@@ -197,7 +158,6 @@ function validateExam() {
     );
   }
   
-  // Check for duplicate questions
   const seen = new Set();
   exam.questions.forEach((q, idx) => {
     const key = `${q.file}::${q.title}`;
@@ -209,13 +169,11 @@ function validateExam() {
     seen.add(key);
   });
   
-  // Check question type distribution
   const typeCount = {};
   exam.questions.forEach(q => {
     typeCount[q.type] = (typeCount[q.type] || 0) + 1;
   });
   
-  // Warn if only one type
   if (Object.keys(typeCount).length === 1) {
     warnings.push(
       "L'examen ne contient qu'un seul type de question. " +
@@ -223,7 +181,6 @@ function validateExam() {
     );
   }
   
-  // Check for unknown types
   if (typeCount.Unknown > 0) {
     warnings.push(
       `L'examen contient ${typeCount.Unknown} question(s) de type inconnu. ` +
@@ -242,9 +199,6 @@ function validateExam() {
   };
 }
 
-/**
- * Get exam statistics
- */
 function getExamStats() {
   const exam = loadCurrentExam();
   
@@ -270,9 +224,6 @@ function getExamStats() {
   return stats;
 }
 
-/**
- * Move a question to a different position
- */
 function moveQuestion(fromIndex, toIndex) {
   const exam = loadCurrentExam();
   
@@ -280,7 +231,6 @@ function moveQuestion(fromIndex, toIndex) {
     throw new Error("L'examen est vide. Aucune question à déplacer.");
   }
   
-  // Convert to 0-based indices
   const from = fromIndex - 1;
   const to = toIndex - 1;
   
@@ -292,7 +242,6 @@ function moveQuestion(fromIndex, toIndex) {
     throw new Error(`Index destination invalide: ${toIndex}`);
   }
   
-  // Move the question
   const [question] = exam.questions.splice(from, 1);
   exam.questions.splice(to, 0, question);
   exam.modifiedAt = new Date().toISOString();
@@ -313,4 +262,3 @@ module.exports = {
   loadCurrentExam,
   saveCurrentExam,
 };
-

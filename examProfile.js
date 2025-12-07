@@ -2,12 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { parseGiftFile } = require("./giftParser");
 
-/**
- * Generate exam profile with histogram
- */
 function generateExamProfile(giftFilePath) {
   try {
-    // Check if file exists
     if (!fs.existsSync(giftFilePath)) {
       return {
         success: false,
@@ -16,7 +12,6 @@ function generateExamProfile(giftFilePath) {
       };
     }
     
-    // Check if file is readable
     try {
       fs.accessSync(giftFilePath, fs.constants.R_OK);
     } catch (err) {
@@ -27,7 +22,6 @@ function generateExamProfile(giftFilePath) {
       };
     }
     
-    // Check if file is empty
     const stats = fs.statSync(giftFilePath);
     if (stats.size === 0) {
       return {
@@ -37,10 +31,8 @@ function generateExamProfile(giftFilePath) {
       };
     }
     
-    // Parse the GIFT file
     const questions = parseGiftFile(giftFilePath);
     
-    // Check if any questions were found
     if (!questions || questions.length === 0) {
       return {
         success: false,
@@ -49,7 +41,6 @@ function generateExamProfile(giftFilePath) {
       };
     }
     
-    // Count questions by type
     const typeCount = {};
     questions.forEach(q => {
       typeCount[q.type] = (typeCount[q.type] || 0) + 1;
@@ -72,9 +63,6 @@ function generateExamProfile(giftFilePath) {
   }
 }
 
-/**
- * Generate ASCII histogram
- */
 function generateTextHistogram(typeDistribution, totalQuestions) {
   const maxBarLength = 50;
   const maxCount = Math.max(...Object.values(typeDistribution));
@@ -84,7 +72,6 @@ function generateTextHistogram(typeDistribution, totalQuestions) {
   output += "HISTOGRAMME DES TYPES DE QUESTIONS\n";
   output += "═".repeat(70) + "\n\n";
   
-  // Sort by count (descending)
   const sorted = Object.entries(typeDistribution)
     .sort((a, b) => b[1] - a[1]);
   
@@ -93,7 +80,6 @@ function generateTextHistogram(typeDistribution, totalQuestions) {
     const barLength = Math.round((count / maxCount) * maxBarLength);
     const bar = "█".repeat(barLength);
     
-    // Format: Type (count) [bar] percentage%
     output += `${type.padEnd(20)} (${String(count).padStart(2)}) │`;
     output += bar.padEnd(maxBarLength + 2);
     output += `│ ${percentage}%\n`;
@@ -106,9 +92,6 @@ function generateTextHistogram(typeDistribution, totalQuestions) {
   return output;
 }
 
-/**
- * Generate detailed profile report
- */
 function generateProfileReport(giftFilePath) {
   const profile = generateExamProfile(giftFilePath);
   
@@ -120,7 +103,6 @@ function generateProfileReport(giftFilePath) {
     };
   }
   
-  // Additional validation
   if (profile.totalQuestions === 0) {
     return {
       success: false,
@@ -153,15 +135,10 @@ function generateProfileReport(giftFilePath) {
   };
 }
 
-/**
- * Save profile to file
- */
 function saveProfileToFile(histogram, outputPath) {
   try {
-    // Check if output path is valid
     const outputDir = path.dirname(outputPath);
     
-    // Check if directory exists
     if (!fs.existsSync(outputDir)) {
       return {
         success: false,
@@ -170,7 +147,6 @@ function saveProfileToFile(histogram, outputPath) {
       };
     }
     
-    // Check if we can write to the directory
     try {
       fs.accessSync(outputDir, fs.constants.W_OK);
     } catch (err) {
@@ -181,7 +157,6 @@ function saveProfileToFile(histogram, outputPath) {
       };
     }
     
-    // Check if file already exists
     if (fs.existsSync(outputPath)) {
       try {
         fs.accessSync(outputPath, fs.constants.W_OK);
@@ -222,4 +197,3 @@ module.exports = {
   generateProfileReport,
   saveProfileToFile,
 };
-

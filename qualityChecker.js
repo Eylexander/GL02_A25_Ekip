@@ -1,31 +1,24 @@
 const { parseGiftFile } = require("./giftParser");
 
-/**
- * Verify the quality of a GIFT exam file
- */
 function verifyGiftExam(giftFilePath) {
   const errors = [];
   const warnings = [];
   
   try {
-    // Parse the GIFT file
     const questions = parseGiftFile(giftFilePath);
     
-    // Check 1: Minimum number of questions (15)
     if (questions.length < 15) {
       errors.push(
         `Nombre de questions insuffisant : ${questions.length}/15 minimum`
       );
     }
     
-    // Check 2: Maximum number of questions (20)
     if (questions.length > 20) {
       errors.push(
         `Nombre de questions excessif : ${questions.length}/20 maximum`
       );
     }
     
-    // Check 3: Question uniqueness
     const seen = new Set();
     const duplicates = [];
     
@@ -41,7 +34,6 @@ function verifyGiftExam(giftFilePath) {
       errors.push(...duplicates);
     }
     
-    // Check 4: Questions with no answers
     const noAnswers = [];
     questions.forEach((q, idx) => {
       if (!q.answers || q.answers.length === 0) {
@@ -55,7 +47,6 @@ function verifyGiftExam(giftFilePath) {
       errors.push(...noAnswers);
     }
     
-    // Check 5: Multiple choice questions with no correct answer
     const noCorrect = [];
     questions.forEach((q, idx) => {
       if (q.type === "MultipleChoice") {
@@ -72,7 +63,6 @@ function verifyGiftExam(giftFilePath) {
       errors.push(...noCorrect);
     }
     
-    // Check 6: Unknown question types
     const unknownTypes = questions.filter(q => q.type === "Unknown");
     if (unknownTypes.length > 0) {
       warnings.push(
@@ -81,7 +71,6 @@ function verifyGiftExam(giftFilePath) {
       );
     }
     
-    // Check 7: Question type diversity
     const typeCount = {};
     questions.forEach(q => {
       typeCount[q.type] = (typeCount[q.type] || 0) + 1;
@@ -120,4 +109,3 @@ function verifyGiftExam(giftFilePath) {
 module.exports = {
   verifyGiftExam,
 };
-

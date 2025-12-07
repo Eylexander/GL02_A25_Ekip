@@ -3,14 +3,9 @@ const path = require("path");
 const readline = require("readline");
 const { parseGiftFile } = require("./giftParser");
 
-/**
- * Parse questions with multiple gaps (cloze tests)
- * Groups answers by their position in the text
- */
 function parseQuestionGaps(question) {
   const gaps = [];
   
-  // Extract all answer blocks from content
   const gapRegex = /\{([\s\S]*?)\}/g;
   let match;
   let gapIndex = 0;
@@ -19,22 +14,17 @@ function parseQuestionGaps(question) {
     gapIndex++;
     const blockContent = match[1];
     
-    // Skip if it's just formatting
     if (!blockContent.trim()) continue;
     
-    // Extract answers for this gap
     const gapAnswers = [];
     
-    // Check format
     const hasType = blockContent.match(/^\d+:(MC|SA):/i);
     const cleanBlock = hasType ? blockContent.replace(/^\d+:(MC|SA):/i, "") : blockContent;
     
-    // Check if multi-line or inline
     const lines = cleanBlock.split(/\r?\n/).map(l => l.trim()).filter(l => l);
     const isMultiline = lines.length > 1 && lines.some(l => l.startsWith("~") || l.startsWith("="));
     
     if (cleanBlock.includes("~") && !isMultiline) {
-      // Inline multiple choice
       const parts = cleanBlock.split("~");
       parts.forEach(part => {
         part = part.trim();
@@ -51,7 +41,6 @@ function parseQuestionGaps(question) {
         }
       });
     } else if (isMultiline) {
-      // Multi-line format
       for (const line of lines) {
         if (!line.startsWith("~") && !line.startsWith("=")) continue;
         
@@ -66,8 +55,6 @@ function parseQuestionGaps(question) {
         }
       }
     } else if (cleanBlock.includes("=")) {
-      // Short answer with multiple correct answers
-      // Use the same regex as the main parser
       const answerPattern = /=([^=]+?)(?=\s+=|#|$)/g;
       const matches = [...cleanBlock.matchAll(answerPattern)];
       
@@ -86,7 +73,6 @@ function parseQuestionGaps(question) {
           }
         });
       } else {
-        // Fallback: simple case with single answer
         let text = cleanBlock.replace(/^=/, "").trim();
         const feedbackIndex = text.indexOf("#");
         if (feedbackIndex !== -1) {
@@ -110,34 +96,26 @@ function parseQuestionGaps(question) {
   return gaps;
 }
 
-/**
- * Display a question to the user
- */
 function displayQuestion(question, questionNumber, totalQuestions) {
   console.log("\n" + "=".repeat(70));
   console.log(`Question ${questionNumber}/${totalQuestions}`);
   console.log("=".repeat(70));
   
-  // Clean and display question text
   let displayText = question.questionText
     .replace(/\[html\]/gi, "")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<b>(.*?)<\/b>/gi, "$1")
     .replace(/<i>(.*?)<\/i>/gi, "$1")
-    .replace(/\/\/.*$/gm, ""); // Remove comments
+    .replace(/\/\/.*$/gm, "");
   
   console.log(displayText);
   console.log();
 }
 
-/**
- * Ask user for answer based on question type
- */
 async function askForAnswer(rl, question, gapInfo = null) {
   return new Promise((resolve) => {
     if (question.type === "MultipleChoice") {
       if (gapInfo) {
-        // Display options for this specific gap
         console.log(`\nGap ${gapInfo.index} - Choisissez une option:`);
         gapInfo.answers.forEach((answer, idx) => {
           console.log(`  ${idx + 1}. ${answer.text}`);
@@ -153,7 +131,6 @@ async function askForAnswer(rl, question, gapInfo = null) {
           }
         });
       } else {
-        // Simple multiple choice
         console.log("Choisissez une option:");
         question.answers.forEach((answer, idx) => {
           console.log(`  ${idx + 1}. ${answer.text}`);
@@ -185,24 +162,18 @@ async function askForAnswer(rl, question, gapInfo = null) {
   });
 }
 
-/**
- * Check if answer is correct
- */
 function checkAnswer(question, userAnswer, gaps = null) {
   if (question.type === "MultipleChoice") {
     if (gaps && userAnswer.gapIndex !== undefined) {
-      // Check answer for specific gap
       const gap = gaps[userAnswer.gapIndex - 1];
       if (gap && gap.answers[userAnswer.value]) {
         return gap.answers[userAnswer.value].correct;
       }
       return false;
     } else {
-      // Simple multiple choice
       return question.answers[userAnswer.value]?.correct || false;
     }
   } else if (question.type === "ShortAnswer") {
-    // Check if answer matches any correct answer (case-insensitive)
     const userText = userAnswer.value.toLowerCase().trim();
     return question.answers.some(
       (answer) => answer.correct && answer.text.toLowerCase().trim() === userText
@@ -212,11 +183,7 @@ function checkAnswer(question, userAnswer, gaps = null) {
   return false;
 }
 
-/**
- * Run exam simulation
- */
 async function simulateExam(giftFilePath) {
-  // Check if file exists
   if (!fs.existsSync(giftFilePath)) {
     throw new Error(`Le fichier ${giftFilePath} est introuvable. Vérifiez le chemin.`);
   }
@@ -226,7 +193,6 @@ async function simulateExam(giftFilePath) {
   console.log("=".repeat(70));
   console.log(`\nChargement de l'examen depuis: ${path.basename(giftFilePath)}`);
   
-  // Parse GIFT file
   const questions = parseGiftFile(giftFilePath);
   
   if (questions.length === 0) {
@@ -249,19 +215,15 @@ async function simulateExam(giftFilePath) {
     rl.question("", resolve);
   });
   
-  // Store results
   const results = [];
   
-  // Process each question
   for (let i = 0; i < questions.length; i++) {
     const question = questions[i];
     displayQuestion(question, i + 1, questions.length);
     
-    // Check if question has multiple gaps
     const gaps = parseQuestionGaps(question);
     
     if (gaps.length > 1) {
-      // Question with multiple gaps
       console.log(`\n📝 Cette question contient ${gaps.length} trous à remplir.`);
       
       const gapResults = [];
@@ -292,7 +254,6 @@ async function simulateExam(giftFilePath) {
       
       console.log(`\n✓ Question complétée (${correctGaps}/${gaps.length} trous corrects)`);
     } else {
-      // Simple question
       const userAnswer = await askForAnswer(rl, question);
       const isCorrect = checkAnswer(question, userAnswer);
       
@@ -316,13 +277,9 @@ async function simulateExam(giftFilePath) {
   
   rl.close();
   
-  // Calculate final score
   return calculateResults(results);
 }
 
-/**
- * Calculate and display results
- */
 function calculateResults(results) {
   console.log("\n" + "=".repeat(70));
   console.log("📊 RÉSULTATS DE L'EXAMEN");
@@ -389,9 +346,6 @@ function calculateResults(results) {
   };
 }
 
-/**
- * Save results to file
- */
 function saveResults(examResults, outputPath) {
   const timestamp = new Date().toLocaleString("fr-FR");
   
@@ -441,4 +395,3 @@ module.exports = {
   simulateExam,
   saveResults,
 };
-

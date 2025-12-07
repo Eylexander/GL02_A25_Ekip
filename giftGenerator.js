@@ -1,9 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 
-/**
- * Format a date for GIFT file header
- */
 function formatDate(date) {
   return new Date(date).toLocaleString('fr-FR', {
     year: 'numeric',
@@ -14,9 +11,6 @@ function formatDate(date) {
   });
 }
 
-/**
- * Generate GIFT file header with metadata
- */
 function generateGiftHeader(exam) {
   const header = [];
   header.push("// ========================================");
@@ -33,29 +27,9 @@ function generateGiftHeader(exam) {
   return header.join("\n");
 }
 
-/**
- * Escape special characters for GIFT format
- */
-function escapeGift(text) {
-  // GIFT special characters that need escaping
-  return text
-    .replace(/\\/g, '\\\\')  // Backslash first
-    .replace(/~/g, '\\~')    // Tilde
-    .replace(/=/g, '\\=')    // Equals (only when not used as correct answer marker)
-    .replace(/#/g, '\\#')    // Hash
-    .replace(/\{/g, '\\{')   // Left brace
-    .replace(/\}/g, '\\}');  // Right brace
-}
-
-/**
- * Convert a question to GIFT format
- * The question already has the correct GIFT format in its rawContent,
- * so we can use it directly with proper formatting
- */
 function questionToGift(question, index) {
   const lines = [];
   
-  // Add a separator comment
   if (index > 0) {
     lines.push("");
   }
@@ -65,17 +39,12 @@ function questionToGift(question, index) {
   lines.push(`// Source: ${question.file}`);
   lines.push("");
   
-  // Use the original GIFT content
-  // Format: ::title::content
   const giftLine = `::${question.title}::${question.content}`;
   lines.push(giftLine);
   
   return lines.join("\n");
 }
 
-/**
- * Generate complete GIFT file content from exam
- */
 function generateGiftContent(exam) {
   if (!exam || !exam.questions || exam.questions.length === 0) {
     throw new Error("L'examen est vide. Impossible de générer un fichier GIFT.");
@@ -83,10 +52,8 @@ function generateGiftContent(exam) {
   
   const parts = [];
   
-  // Add header
   parts.push(generateGiftHeader(exam));
   
-  // Add each question
   exam.questions.forEach((question, index) => {
     try {
       parts.push(questionToGift(question, index));
@@ -99,7 +66,6 @@ function generateGiftContent(exam) {
     }
   });
   
-  // Add footer
   parts.push("");
   parts.push("// ========================================");
   parts.push(`// Fin de l'examen - ${exam.questions.length} questions`);
@@ -109,14 +75,10 @@ function generateGiftContent(exam) {
   return parts.join("\n");
 }
 
-/**
- * Validate GIFT syntax (basic validation)
- */
 function validateGiftSyntax(content) {
   const errors = [];
   const warnings = [];
   
-  // Count questions by looking for :: markers
   const questionPattern = /::[^:]+::/g;
   const questionMatches = content.match(questionPattern);
   const questionCount = questionMatches ? questionMatches.length : 0;
@@ -125,7 +87,6 @@ function validateGiftSyntax(content) {
     errors.push("Aucune question trouvée dans le fichier GIFT");
   }
   
-  // Check for severely malformed content
   const openBraces = (content.match(/\{/g) || []).length;
   const closeBraces = (content.match(/\}/g) || []).length;
   
@@ -136,7 +97,6 @@ function validateGiftSyntax(content) {
     );
   }
   
-  // Basic structure check
   if (!content.includes("::") || !content.includes("{")) {
     errors.push("Le fichier ne semble pas contenir de questions GIFT valides");
   }
@@ -149,18 +109,13 @@ function validateGiftSyntax(content) {
   };
 }
 
-/**
- * Save GIFT file to disk
- */
 function saveGiftFile(content, filePath) {
   try {
-    // Create directory if it doesn't exist
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     
-    // Write file
     fs.writeFileSync(filePath, content, "utf8");
     
     return {
@@ -185,11 +140,7 @@ function saveGiftFile(content, filePath) {
   }
 }
 
-/**
- * Generate and save a GIFT file from an exam
- */
 function generateGiftFile(exam, outputPath) {
-  // Validate exam has minimum questions
   if (exam.questions.length < exam.metadata.minQuestions) {
     throw new Error(
       `L'examen doit contenir au moins ${exam.metadata.minQuestions} questions. ` +
@@ -197,7 +148,6 @@ function generateGiftFile(exam, outputPath) {
     );
   }
   
-  // Validate exam has maximum questions
   if (exam.questions.length > exam.metadata.maxQuestions) {
     throw new Error(
       `L'examen ne peut contenir plus de ${exam.metadata.maxQuestions} questions. ` +
@@ -205,10 +155,8 @@ function generateGiftFile(exam, outputPath) {
     );
   }
   
-  // Generate content
   const content = generateGiftContent(exam);
   
-  // Validate syntax
   const validation = validateGiftSyntax(content);
   
   if (!validation.valid) {
@@ -217,7 +165,6 @@ function generateGiftFile(exam, outputPath) {
     throw new Error(errorMsg);
   }
   
-  // Save file
   const result = saveGiftFile(content, outputPath);
   
   return {
@@ -227,9 +174,6 @@ function generateGiftFile(exam, outputPath) {
   };
 }
 
-/**
- * Preview GIFT content without saving
- */
 function previewGiftFile(exam, maxLines = 50) {
   const content = generateGiftContent(exam);
   const lines = content.split("\n");
@@ -250,11 +194,7 @@ function previewGiftFile(exam, maxLines = 50) {
   };
 }
 
-/**
- * Get default output filename based on exam title
- */
 function getDefaultFilename(examTitle) {
-  // Sanitize title for filename
   const sanitized = examTitle
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
@@ -273,4 +213,3 @@ module.exports = {
   getDefaultFilename,
   saveGiftFile,
 };
-

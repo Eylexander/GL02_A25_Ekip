@@ -54,7 +54,6 @@ cli
   .version("gift-cli")
   .version("0.01")
   
-  // EF01: Search and visualization command
   .command("search", "Search and visualize questions from GIFT files")
   .argument("[type]", "Filter by question type (e.g., MultipleChoice, ShortAnswer)")
   .argument("[keyword]", "Filter by keyword in question content")
@@ -125,7 +124,6 @@ cli
     }
   })
   
-  // Statistics command
   .command("stats", "Display statistics about the question bank")
   .option("-d, --dataDir <dir>", "Directory containing GIFT files", {
     default: "./data",
@@ -167,7 +165,6 @@ cli
     logger.info("");
   })
   
-  // List available types command
   .command("types", "List all available question types in the question bank")
   .option("-d, --dataDir <dir>", "Directory containing GIFT files", {
     default: "./data",
@@ -191,9 +188,6 @@ cli
     logger.info("");
   })
   
-  // ========== EF02: EXAM COMPOSITION COMMANDS ==========
-  
-  // Initialize a new exam
   .command("exam-init", "Initialize a new exam composition (EF02)")
   .argument("[title]", "Title of the exam", { default: "Nouvel examen" })
   .action(({ args, logger }) => {
@@ -214,7 +208,6 @@ cli
     }
   })
   
-  // Add a question to the exam
   .command("exam-add", "Add a question to the current exam (EF02)")
   .argument("<file>", "File name containing the question")
   .argument("<title>", "Title of the question (use quotes if it contains spaces)")
@@ -250,7 +243,6 @@ cli
     }
   })
   
-  // Remove a question from the exam
   .command("exam-remove", "Remove a question from the current exam (EF02)")
   .argument("<index>", "Position of the question to remove (1-based)", {
     validator: cli.NUMBER,
@@ -278,7 +270,6 @@ cli
     }
   })
   
-  // List current exam composition
   .command("exam-list", "Display the current exam composition (EF02)")
   .option("-v, --verbose", "Show detailed question information", {
     default: false,
@@ -349,7 +340,6 @@ cli
     }
   })
   
-  // Validate exam
   .command("exam-validate", "Validate the current exam composition (EF02)")
   .action(({ logger }) => {
     try {
@@ -374,7 +364,6 @@ cli
         logger.info("");
       }
       
-      // Display warnings
       if (validation.warnings.length > 0) {
         logger.info(chalk.yellow.bold("Avertissements:"));
         validation.warnings.forEach((warn, i) => {
@@ -383,7 +372,6 @@ cli
         logger.info("");
       }
       
-      // Display statistics
       logger.info(chalk.blue.bold("Statistiques:"));
       logger.info(chalk.cyan("  Questions: ") + chalk.white(validation.stats.questionCount));
       logger.info(chalk.cyan("  Répartition par type:"));
@@ -404,7 +392,6 @@ cli
     }
   })
   
-  // Clear exam
   .command("exam-clear", "Clear the current exam and start over (EF02)")
   .action(({ logger }) => {
     try {
@@ -417,7 +404,6 @@ cli
     }
   })
   
-  // Move question
   .command("exam-move", "Move a question to a different position (EF02)")
   .argument("<from>", "Current position of the question (1-based)", {
     validator: cli.NUMBER,
@@ -438,9 +424,6 @@ cli
     }
   })
   
-  // ========== EF03: GIFT FILE GENERATION COMMANDS ==========
-  
-  // Generate GIFT file
   .command("exam-generate", "Generate a GIFT file from the current exam (EF03)")
   .argument("[filename]", "Output filename (default: auto-generated from exam title)")
   .option("-o, --output <dir>", "Output directory", {
@@ -462,7 +445,6 @@ cli
         process.exit(1);
       }
       
-      // Validate exam before generating
       const validation = validateExam();
       if (!validation.valid) {
         logger.error(chalk.red("\n✗ L'examen n'est pas valide. Impossible de générer le fichier GIFT.\n"));
@@ -474,18 +456,15 @@ cli
         process.exit(1);
       }
       
-      // Determine output filename
       const outputFilename = filename || getDefaultFilename(exam.title);
       const outputPath = path.join(output, outputFilename);
       
-      // Check if file exists
       if (fs.existsSync(outputPath) && !force) {
         logger.error(chalk.yellow(`\n⚠ Le fichier "${outputPath}" existe déjà.\n`));
         logger.info(chalk.gray("Utilisez l'option --force pour écraser le fichier existant.\n"));
         process.exit(1);
       }
       
-      // Generate the file
       logger.info(chalk.blue("\n⏳ Génération du fichier GIFT...\n"));
       
       const result = generateGiftFile(exam, outputPath);
@@ -511,7 +490,6 @@ cli
     }
   })
   
-  // Preview GIFT file
   .command("exam-preview", "Preview the GIFT file content without saving (EF03)")
   .option("-l, --lines <number>", "Number of lines to display", {
     validator: cli.NUMBER,
@@ -549,9 +527,6 @@ cli
     }
   })
   
-  // ========== EF04: VCARD GENERATION COMMANDS ==========
-  
-  // Generate VCard for teacher
   .command("vcard-generate", "Generate a VCard file for a teacher (EF04)")
   .option("--firstName <name>", "Teacher's first name (required)")
   .option("--lastName <name>", "Teacher's last name (required)")
@@ -579,7 +554,6 @@ cli
   })
   .action(({ options, logger }) => {
     try {
-      // Build teacher data object
       const teacherData = {
         firstName: options.firstName,
         lastName: options.lastName,
@@ -594,7 +568,6 @@ cli
         address: {}
       };
       
-      // Add address if provided
       if (options.city || options.country) {
         teacherData.address = {
           city: options.city,
@@ -602,32 +575,27 @@ cli
         };
       }
       
-      // Check required fields
       if (!teacherData.firstName || !teacherData.lastName) {
         logger.error(chalk.red("\n✗ Erreur: Les champs --firstName et --lastName sont obligatoires.\n"));
         logger.info(chalk.gray("Exemple: vcard-generate --firstName Jean --lastName Dupont --email jean.dupont@sryem.se\n"));
         process.exit(1);
       }
       
-      // Validate email if provided
       if (teacherData.email && !validateEmail(teacherData.email)) {
         logger.error(chalk.red("\n✗ Erreur: L'email fourni n'est pas valide.\n"));
         logger.info(chalk.gray("Format attendu: nom@domaine.se\n"));
         process.exit(1);
       }
       
-      // Determine output filename
       const filename = getDefaultVCardFilename(teacherData.firstName, teacherData.lastName);
       const outputPath = path.join(options.output, filename);
       
-      // Check if file exists
       if (fs.existsSync(outputPath) && !options.force) {
         logger.error(chalk.yellow(`\n⚠ Le fichier "${outputPath}" existe déjà.\n`));
         logger.info(chalk.gray("Utilisez l'option --force pour écraser le fichier existant.\n"));
         process.exit(1);
       }
       
-      // Generate the VCard
       logger.info(chalk.blue("\n⏳ Génération de la VCard...\n"));
       
       const result = generateVCardFile(teacherData, outputPath);
@@ -646,7 +614,6 @@ cli
     }
   })
   
-  // Preview VCard
   .command("vcard-preview", "Preview VCard content (EF04)")
   .option("--firstName <name>", "Teacher's first name (required)")
   .option("--lastName <name>", "Teacher's last name (required)")
@@ -669,7 +636,6 @@ cli
         title: options.title,
       };
       
-      // Check required fields
       if (!teacherData.firstName || !teacherData.lastName) {
         logger.error(chalk.red("\n✗ Erreur: Les champs --firstName et --lastName sont obligatoires.\n"));
         process.exit(1);
@@ -701,7 +667,6 @@ cli
     }
   })
   
-  // EF05: Exam simulation command
   .command("simuler", "Simulate taking an exam from a GIFT file")
   .argument("<examen>", "Path to the GIFT exam file")
   .option("-s, --save <fichier>", "Save results to a file", {
@@ -717,15 +682,12 @@ cli
         process.exit(1);
       }
       
-      // Run simulation
       const results = await simulateExam(examPath);
       
-      // Save results if requested
       if (options.save) {
         const outputPath = options.save;
         saveResults(results, outputPath);
       } else {
-        // Ask if user wants to save
         const readline = require("readline");
         const rl = readline.createInterface({
           input: process.stdin,
@@ -756,7 +718,6 @@ cli
     }
   })
   
-  // EF06: Quality verification command
   .command("verifier", "Verify the quality of a GIFT exam file")
   .argument("<examen>", "Path to the GIFT exam file to verify")
   .action(({ args, logger }) => {
@@ -772,10 +733,8 @@ cli
       logger.info(chalk.blue.bold("\n🔍 VÉRIFICATION DE LA QUALITÉ DE L'EXAMEN\n"));
       logger.info(chalk.gray(`Fichier: ${examPath}\n`));
       
-      // Verify the exam
       const result = verifyGiftExam(examPath);
       
-      // Display statistics
       if (result.stats) {
         logger.info(chalk.cyan("📊 Statistiques:"));
         logger.info(`   Questions: ${result.stats.totalQuestions}`);
@@ -786,7 +745,6 @@ cli
         logger.info("");
       }
       
-      // Display errors
       if (result.errors.length > 0) {
         logger.error(chalk.red.bold("❌ Erreurs détectées:\n"));
         result.errors.forEach((error, i) => {
@@ -795,7 +753,6 @@ cli
         logger.info("");
       }
       
-      // Display warnings
       if (result.warnings.length > 0) {
         logger.warn(chalk.yellow.bold("⚠️  Avertissements:\n"));
         result.warnings.forEach((warning, i) => {
@@ -804,7 +761,6 @@ cli
         logger.info("");
       }
       
-      // Display final result
       if (result.valid) {
         logger.info(chalk.green.bold("✅ Examen conforme aux règles du SRYEM\n"));
         process.exit(0);
@@ -819,7 +775,6 @@ cli
     }
   })
   
-  // EF07: Exam profile with histogram
   .command("profil", "Generate a question type distribution histogram for an exam")
   .argument("<examen>", "Path to the GIFT exam file")
   .option("-s, --sortie <fichier>", "Save histogram to a file", {
@@ -838,7 +793,6 @@ cli
       logger.info(chalk.blue.bold("\n📊 PROFIL DE L'EXAMEN\n"));
       logger.info(chalk.gray(`Fichier: ${examPath}\n`));
       
-      // Generate profile
       const result = generateProfileReport(examPath);
       
       if (!result.success) {
@@ -846,10 +800,8 @@ cli
         process.exit(1);
       }
       
-      // Display histogram
       console.log(result.histogram);
       
-      // Display additional stats
       logger.info(chalk.cyan("\n📈 Statistiques:"));
       logger.info(`   Nombre de types différents: ${result.stats.typeCount}`);
       logger.info(`   Type le plus fréquent: ${
@@ -858,7 +810,6 @@ cli
       }`);
       logger.info("");
       
-      // Save to file if requested
       if (options.sortie) {
         const saveResult = saveProfileToFile(result.histogram, options.sortie);
         
@@ -876,7 +827,6 @@ cli
     }
   })
   
-  // EF08: Profile comparison command
   .command("comparer", "Compare an exam profile with the question bank")
   .argument("<examen>", "Path to the exam GIFT file")
   .option("-b, --banque <path>", "Path to bank file or directory (default: ./data)", {
@@ -890,13 +840,11 @@ cli
       const examPath = args.examen;
       const bankPath = options.banque;
       
-      // Check if exam file exists
       if (!fs.existsSync(examPath)) {
         logger.error(chalk.red(`\n✗ Le fichier d'examen ${examPath} est introuvable.\n`));
         process.exit(1);
       }
       
-      // Check if bank exists
       if (!fs.existsSync(bankPath)) {
         logger.error(chalk.red(`\n✗ La banque ${bankPath} est introuvable.\n`));
         process.exit(1);
@@ -906,7 +854,6 @@ cli
       logger.info(chalk.gray(`Examen: ${examPath}`));
       logger.info(chalk.gray(`Banque: ${bankPath}\n`));
       
-      // Perform comparison
       const comparison = compareProfiles(examPath, bankPath);
       
       if (!comparison.success) {
@@ -914,13 +861,10 @@ cli
         process.exit(1);
       }
       
-      // Generate report
       const report = generateComparisonReport(comparison);
       
-      // Display report
       console.log(report);
       
-      // Save to file if requested
       if (options.sortie) {
         const saveResult = saveComparisonReport(report, options.sortie);
         
@@ -938,7 +882,6 @@ cli
     }
   })
   
-  // EF10: Import command
   .command("importer", "Import and validate a GIFT file")
   .argument("<fichier>", "Path to the GIFT file to import")
   .option("-b, --banque", "Import to the question bank (./data)", {
@@ -952,7 +895,6 @@ cli
       logger.info(chalk.gray(`Fichier: ${filePath}\n`));
       
       if (options.banque) {
-        // Import to bank
         const result = importToBank(filePath);
         
         if (!result.success) {
@@ -970,7 +912,6 @@ cli
         logger.info("");
         
       } else {
-        // Just validate
         const result = importGiftFile(filePath);
         
         if (!result.success) {
@@ -999,7 +940,6 @@ cli
     }
   })
   
-  // EF10: Export command
   .command("exporter", "Export a GIFT file to a destination")
   .argument("<source>", "Path to the source GIFT file")
   .argument("<destination>", "Destination path (file or directory)")
@@ -1012,7 +952,6 @@ cli
       logger.info(chalk.gray(`Source: ${sourcePath}`));
       logger.info(chalk.gray(`Destination: ${destPath}\n`));
       
-      // Export file
       const result = exportGiftFile(sourcePath, destPath);
       
       if (!result.success) {

@@ -2,23 +2,17 @@ const fs = require("fs");
 const path = require("path");
 const { generateExamProfile } = require("./examProfile");
 
-/**
- * Generate bank profile from multiple GIFT files
- */
 function generateBankProfile(bankPath) {
   try {
-    // Check if path is a directory or file
     const stats = fs.statSync(bankPath);
     let files = [];
     
     if (stats.isDirectory()) {
-      // Read all GIFT files in directory
       const allFiles = fs.readdirSync(bankPath);
       files = allFiles
         .filter(f => f.endsWith(".gift"))
         .map(f => path.join(bankPath, f));
     } else {
-      // Single file
       files = [bankPath];
     }
     
@@ -30,7 +24,6 @@ function generateBankProfile(bankPath) {
       };
     }
     
-    // Aggregate all questions
     let totalQuestions = 0;
     const typeCount = {};
     const fileStats = [];
@@ -40,7 +33,6 @@ function generateBankProfile(bankPath) {
       if (profile.success) {
         totalQuestions += profile.totalQuestions;
         
-        // Merge type counts
         Object.entries(profile.typeDistribution).forEach(([type, count]) => {
           typeCount[type] = (typeCount[type] || 0) + count;
         });
@@ -61,7 +53,6 @@ function generateBankProfile(bankPath) {
       };
     }
     
-    // Calculate percentages
     const typePercentages = {};
     Object.entries(typeCount).forEach(([type, count]) => {
       typePercentages[type] = (count / totalQuestions) * 100;
@@ -85,11 +76,7 @@ function generateBankProfile(bankPath) {
   }
 }
 
-/**
- * Compare exam profile with bank profile
- */
 function compareProfiles(examPath, bankPath) {
-  // Generate exam profile
   const examProfile = generateExamProfile(examPath);
   if (!examProfile.success) {
     return {
@@ -99,7 +86,6 @@ function compareProfiles(examPath, bankPath) {
     };
   }
   
-  // Generate bank profile
   const bankProfile = generateBankProfile(bankPath);
   if (!bankProfile.success) {
     return {
@@ -109,7 +95,6 @@ function compareProfiles(examPath, bankPath) {
     };
   }
   
-  // Check for sufficient data
   if (bankProfile.totalQuestions < 10) {
     return {
       success: false,
@@ -118,13 +103,11 @@ function compareProfiles(examPath, bankPath) {
     };
   }
   
-  // Calculate exam percentages
   const examPercentages = {};
   Object.entries(examProfile.typeDistribution).forEach(([type, count]) => {
     examPercentages[type] = (count / examProfile.totalQuestions) * 100;
   });
   
-  // Calculate differences
   const allTypes = new Set([
     ...Object.keys(examPercentages),
     ...Object.keys(bankProfile.typePercentages),
@@ -146,7 +129,6 @@ function compareProfiles(examPath, bankPath) {
     });
   });
   
-  // Sort by absolute difference (descending)
   comparisons.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
   
   return {
@@ -168,9 +150,6 @@ function compareProfiles(examPath, bankPath) {
   };
 }
 
-/**
- * Generate comparison report
- */
 function generateComparisonReport(comparison) {
   let report = "";
   
@@ -178,12 +157,10 @@ function generateComparisonReport(comparison) {
   report += "RAPPORT DE COMPARAISON DES PROFILS\n";
   report += "═".repeat(70) + "\n\n";
   
-  // Exam info
   report += "📝 EXAMEN ANALYSÉ:\n";
   report += `   Fichier: ${path.basename(comparison.exam.path)}\n`;
   report += `   Questions: ${comparison.exam.totalQuestions}\n\n`;
   
-  // Bank info
   report += "📚 BANQUE DE RÉFÉRENCE:\n";
   if (comparison.bank.filesAnalyzed > 1) {
     report += `   Fichiers analysés: ${comparison.bank.filesAnalyzed}\n`;
@@ -196,7 +173,6 @@ function generateComparisonReport(comparison) {
   report += "COMPARAISON PAR TYPE DE QUESTION\n";
   report += "═".repeat(70) + "\n\n";
   
-  // Comparison table
   report += "Type                 Examen    Banque    Écart\n";
   report += "─".repeat(70) + "\n";
   
@@ -213,7 +189,6 @@ function generateComparisonReport(comparison) {
   report += "ANALYSE DES ÉCARTS\n";
   report += "═".repeat(70) + "\n\n";
   
-  // Highlight significant differences
   const significantDiffs = comparison.comparisons.filter(
     c => Math.abs(c.difference) > 10
   );
@@ -235,7 +210,6 @@ function generateComparisonReport(comparison) {
     report += "   Aucun écart significatif détecté (> 10%).\n\n";
   }
   
-  // Recommendations
   report += "═".repeat(70) + "\n";
   report += "RECOMMANDATIONS\n";
   report += "═".repeat(70) + "\n\n";
@@ -268,9 +242,6 @@ function generateComparisonReport(comparison) {
   return report;
 }
 
-/**
- * Save comparison report to file
- */
 function saveComparisonReport(report, outputPath) {
   try {
     const timestamp = new Date().toLocaleString("fr-FR");
@@ -300,4 +271,3 @@ module.exports = {
   generateComparisonReport,
   saveComparisonReport,
 };
-
