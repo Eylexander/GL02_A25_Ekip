@@ -10,7 +10,7 @@ function loadCurrentExam() {
       const data = fs.readFileSync(EXAM_FILE, "utf8");
       return JSON.parse(data);
     } catch (error) {
-      console.error("Error loading exam file:", error.message);
+      console.error("Erreur lors du chargement du fichier d'examen:", error.message);
       return createEmptyExam();
     }
   }
@@ -22,7 +22,7 @@ function saveCurrentExam(exam) {
     fs.writeFileSync(EXAM_FILE, JSON.stringify(exam, null, 2), "utf8");
     return true;
   } catch (error) {
-    console.error("Error saving exam file:", error.message);
+    console.error("Erreur lors de la sauvegarde du fichier d'examen:", error.message);
     return false;
   }
 }

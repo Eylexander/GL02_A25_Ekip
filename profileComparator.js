@@ -157,11 +157,11 @@ function generateComparisonReport(comparison) {
   report += "RAPPORT DE COMPARAISON DES PROFILS\n";
   report += "═".repeat(70) + "\n\n";
   
-  report += "📝 EXAMEN ANALYSÉ:\n";
+  report += "EXAMEN ANALYSE:\n";
   report += `   Fichier: ${path.basename(comparison.exam.path)}\n`;
   report += `   Questions: ${comparison.exam.totalQuestions}\n\n`;
   
-  report += "📚 BANQUE DE RÉFÉRENCE:\n";
+  report += "BANQUE DE REFERENCE:\n";
   if (comparison.bank.filesAnalyzed > 1) {
     report += `   Fichiers analysés: ${comparison.bank.filesAnalyzed}\n`;
   } else {
@@ -196,18 +196,18 @@ function generateComparisonReport(comparison) {
   if (significantDiffs.length > 0) {
     significantDiffs.forEach(comp => {
       if (comp.difference > 0) {
-        report += `⚠️  Votre examen contient ${comp.examPercent.toFixed(1)}% de questions de type "${comp.type}",\n`;
+        report += `Votre examen contient ${comp.examPercent.toFixed(1)}% de questions de type "${comp.type}",\n`;
         report += `   contre ${comp.bankPercent.toFixed(1)}% en moyenne dans la banque.\n`;
         report += `   Écart: +${comp.difference.toFixed(1)} points de pourcentage.\n\n`;
       } else {
-        report += `⚠️  Votre examen contient ${comp.examPercent.toFixed(1)}% de questions de type "${comp.type}",\n`;
+        report += `Votre examen contient ${comp.examPercent.toFixed(1)}% de questions de type "${comp.type}",\n`;
         report += `   contre ${comp.bankPercent.toFixed(1)}% en moyenne dans la banque.\n`;
         report += `   Écart: ${comp.difference.toFixed(1)} points de pourcentage.\n\n`;
       }
     });
   } else {
-    report += "✅ Votre examen présente une répartition similaire à la banque.\n";
-    report += "   Aucun écart significatif détecté (> 10%).\n\n";
+    report += "Votre examen presente une repartition similaire a la banque.\n";
+    report += "   Aucun ecart significatif detecte (> 10%).\n\n";
   }
   
   report += "═".repeat(70) + "\n";
@@ -218,7 +218,7 @@ function generateComparisonReport(comparison) {
   const underrepresented = comparison.comparisons.filter(c => c.difference < -15);
   
   if (overrepresented.length > 0) {
-    report += "📊 Types sur-représentés:\n";
+    report += "Types sur-representes:\n";
     overrepresented.forEach(c => {
       report += `   - ${c.type}: Réduire de ${Math.abs(c.difference).toFixed(1)}%\n`;
     });
@@ -226,7 +226,7 @@ function generateComparisonReport(comparison) {
   }
   
   if (underrepresented.length > 0) {
-    report += "📊 Types sous-représentés:\n";
+    report += "Types sous-representes:\n";
     underrepresented.forEach(c => {
       report += `   - ${c.type}: Augmenter de ${Math.abs(c.difference).toFixed(1)}%\n`;
     });
@@ -234,7 +234,7 @@ function generateComparisonReport(comparison) {
   }
   
   if (overrepresented.length === 0 && underrepresented.length === 0) {
-    report += "✅ La répartition de votre examen est équilibrée.\n\n";
+    report += "La repartition de votre examen est equilibree.\n\n";
   }
   
   report += "─".repeat(70) + "\n";

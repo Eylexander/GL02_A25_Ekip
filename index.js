@@ -54,16 +54,16 @@ cli
   .version("gift-cli")
   .version("0.01")
   
-  .command("search", "Search and visualize questions from GIFT files")
-  .argument("[type]", "Filter by question type (e.g., MultipleChoice, ShortAnswer)")
-  .argument("[keyword]", "Filter by keyword in question content")
-  .option("-d, --dataDir <dir>", "Directory containing GIFT files", {
+  .command("search", "Rechercher et visualiser des questions depuis des fichiers GIFT")
+  .argument("[type]", "Filtrer par type de question (ex: MultipleChoice, ShortAnswer)")
+  .argument("[keyword]", "Filtrer par mot-cle dans le contenu des questions")
+  .option("-d, --dataDir <dir>", "Repertoire contenant les fichiers GIFT", {
     default: "./data",
   })
-  .option("-v, --verbose", "Show detailed information including answers", {
+  .option("-v, --verbose", "Afficher les informations detaillees incluant les reponses", {
     default: false,
   })
-  .option("-l, --limit <number>", "Limit number of results displayed", {
+  .option("-l, --limit <number>", "Limiter le nombre de resultats affiches", {
     validator: cli.NUMBER,
   })
   .action(({ args, options, logger }) => {
@@ -100,7 +100,7 @@ cli
         if (verbose && q.answers && q.answers.length > 0) {
           logger.info(chalk.cyan(`Answers:`));
           q.answers.forEach((ans, idx) => {
-            const marker = ans.correct ? chalk.green("✓") : chalk.red("✗");
+            const marker = ans.correct ? chalk.green("") : chalk.red("");
             logger.info(`  ${marker} ${ans.text}`);
           });
         }
@@ -124,8 +124,8 @@ cli
     }
   })
   
-  .command("stats", "Display statistics about the question bank")
-  .option("-d, --dataDir <dir>", "Directory containing GIFT files", {
+  .command("stats", "Afficher les statistiques de la banque de questions")
+  .option("-d, --dataDir <dir>", "Repertoire contenant les fichiers GIFT", {
     default: "./data",
   })
   .action(({ options, logger }) => {
@@ -138,7 +138,7 @@ cli
 
     const stats = getQuestionStats(dataDir);
     
-    logger.info(chalk.green.bold("\n📊 Question Bank Statistics\n"));
+    logger.info(chalk.green.bold("\n Question Bank Statistics\n"));
     logger.info(chalk.cyan("Total files:     ") + chalk.white(stats.totalFiles));
     logger.info(chalk.cyan("Total questions: ") + chalk.white(stats.totalQuestions));
     logger.info(chalk.cyan("Avg per file:    ") + chalk.white(Math.round(stats.totalQuestions / stats.totalFiles)));
@@ -165,8 +165,8 @@ cli
     logger.info("");
   })
   
-  .command("types", "List all available question types in the question bank")
-  .option("-d, --dataDir <dir>", "Directory containing GIFT files", {
+  .command("types", "Lister tous les types de questions disponibles dans la banque")
+  .option("-d, --dataDir <dir>", "Repertoire contenant les fichiers GIFT", {
     default: "./data",
   })
   .action(({ options, logger }) => {
@@ -179,7 +179,7 @@ cli
 
     const types = getAvailableTypes(dataDir);
     
-    logger.info(chalk.green.bold("\n📋 Available Question Types\n"));
+    logger.info(chalk.green.bold("\n Available Question Types\n"));
     types.forEach((type) => {
       logger.info(`  ${chalk.yellow("•")} ${chalk.cyan(type)}`);
     });
@@ -188,14 +188,14 @@ cli
     logger.info("");
   })
   
-  .command("exam-init", "Initialize a new exam composition (EF02)")
-  .argument("[title]", "Title of the exam", { default: "Nouvel examen" })
+  .command("exam-init", "Initialiser une nouvelle composition d'examen (EF02)")
+  .argument("[title]", "Titre de l'examen", { default: "Nouvel examen" })
   .action(({ args, logger }) => {
     const { title } = args;
     
     try {
       const exam = initExam(title);
-      logger.info(chalk.green.bold("\n✓ Nouvel examen initialisé\n"));
+      logger.info(chalk.green.bold("\n Nouvel examen initialisé\n"));
       logger.info(chalk.cyan("Titre: ") + chalk.white(exam.title));
       logger.info(chalk.cyan("Date de création: ") + chalk.gray(new Date(exam.createdAt).toLocaleString('fr-FR')));
       logger.info(chalk.cyan("Questions: ") + chalk.yellow("0"));
@@ -203,15 +203,15 @@ cli
       logger.info(chalk.gray("\nUtilisez 'exam-add' pour ajouter des questions à l'examen."));
       logger.info("");
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-add", "Add a question to the current exam (EF02)")
-  .argument("<file>", "File name containing the question")
-  .argument("<title>", "Title of the question (use quotes if it contains spaces)")
-  .option("-d, --dataDir <dir>", "Directory containing GIFT files", {
+  .command("exam-add", "Ajouter une question a l'examen en cours (EF02)")
+  .argument("<file>", "Nom du fichier contenant la question")
+  .argument("<title>", "Titre de la question (utilisez des guillemets si elle contient des espaces)")
+  .option("-d, --dataDir <dir>", "Repertoire contenant les fichiers GIFT", {
     default: "./data",
   })
   .action(({ args, options, logger }) => {
@@ -222,7 +222,7 @@ cli
       const exam = addQuestion(dataDir, file, title);
       const questionCount = exam.questions.length;
       
-      logger.info(chalk.green.bold("\n✓ Question ajoutée avec succès\n"));
+      logger.info(chalk.green.bold("\n Question ajoutée avec succès\n"));
       logger.info(chalk.cyan("Position: ") + chalk.yellow(`#${questionCount}`));
       logger.info(chalk.cyan("Fichier: ") + chalk.white(file));
       logger.info(chalk.cyan("Titre: ") + chalk.white(title));
@@ -230,21 +230,21 @@ cli
       
       if (questionCount < exam.metadata.minQuestions) {
         const remaining = exam.metadata.minQuestions - questionCount;
-        logger.info(chalk.yellow(`\n⚠ Il vous faut encore ${remaining} question(s) minimum pour valider l'examen.`));
+        logger.info(chalk.yellow(`\n Il vous faut encore ${remaining} question(s) minimum pour valider l'examen.`));
       } else if (questionCount >= exam.metadata.minQuestions && questionCount <= exam.metadata.maxQuestions) {
-        logger.info(chalk.green(`\n✓ L'examen contient un nombre valide de questions (${questionCount}).`));
+        logger.info(chalk.green(`\n L'examen contient un nombre valide de questions (${questionCount}).`));
       }
       
       logger.info(chalk.gray("\nUtilisez 'exam-list' pour voir toutes les questions de l'examen."));
       logger.info("");
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-remove", "Remove a question from the current exam (EF02)")
-  .argument("<index>", "Position of the question to remove (1-based)", {
+  .command("exam-remove", "Retirer une question de l'examen en cours (EF02)")
+  .argument("<index>", "Position de la question a retirer (commence a 1)", {
     validator: cli.NUMBER,
   })
   .action(({ args, logger }) => {
@@ -253,25 +253,25 @@ cli
     try {
       const { exam, removed } = removeQuestion(index);
       
-      logger.info(chalk.green.bold("\n✓ Question retirée avec succès\n"));
+      logger.info(chalk.green.bold("\n Question retirée avec succès\n"));
       logger.info(chalk.cyan("Titre: ") + chalk.white(removed.title));
       logger.info(chalk.cyan("Fichier: ") + chalk.white(removed.file));
       logger.info(chalk.cyan("Total: ") + chalk.yellow(`${exam.questions.length}/${exam.metadata.maxQuestions} questions`));
       
       if (exam.questions.length < exam.metadata.minQuestions) {
         const remaining = exam.metadata.minQuestions - exam.questions.length;
-        logger.info(chalk.yellow(`\n⚠ Il vous faut encore ${remaining} question(s) minimum pour valider l'examen.`));
+        logger.info(chalk.yellow(`\n Il vous faut encore ${remaining} question(s) minimum pour valider l'examen.`));
       }
       
       logger.info("");
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-list", "Display the current exam composition (EF02)")
-  .option("-v, --verbose", "Show detailed question information", {
+  .command("exam-list", "Afficher la composition de l'examen en cours (EF02)")
+  .option("-v, --verbose", "Afficher les informations detaillees des questions", {
     default: false,
   })
   .action(({ options, logger }) => {
@@ -281,13 +281,13 @@ cli
       const exam = getCurrentExam();
       
       if (!exam || exam.questions.length === 0) {
-        logger.info(chalk.yellow("\n⚠ Aucun examen en cours ou l'examen est vide.\n"));
+        logger.info(chalk.yellow("\n Aucun examen en cours ou l'examen est vide.\n"));
         logger.info(chalk.gray("Utilisez 'exam-init' pour créer un nouvel examen."));
         logger.info(chalk.gray("Utilisez 'exam-add' pour ajouter des questions.\n"));
         return;
       }
       
-      logger.info(chalk.green.bold("\n📝 Composition de l'examen\n"));
+      logger.info(chalk.green.bold("\n Composition de l'examen\n"));
       logger.info(chalk.cyan("Titre: ") + chalk.white(exam.title));
       logger.info(chalk.cyan("Questions: ") + chalk.yellow(`${exam.questions.length}/${exam.metadata.maxQuestions}`));
       logger.info(chalk.cyan("Dernière modification: ") + chalk.gray(new Date(exam.modifiedAt).toLocaleString('fr-FR')));
@@ -297,11 +297,11 @@ cli
                       exam.questions.length <= exam.metadata.maxQuestions;
       
       if (isValid) {
-        logger.info(chalk.cyan("Statut: ") + chalk.green("✓ Valide"));
+        logger.info(chalk.cyan("Statut: ") + chalk.green(" Valide"));
       } else if (exam.questions.length < exam.metadata.minQuestions) {
-        logger.info(chalk.cyan("Statut: ") + chalk.yellow(`⚠ ${exam.metadata.minQuestions - exam.questions.length} question(s) manquante(s)`));
+        logger.info(chalk.cyan("Statut: ") + chalk.yellow(` ${exam.metadata.minQuestions - exam.questions.length} question(s) manquante(s)`));
       } else {
-        logger.info(chalk.cyan("Statut: ") + chalk.red(`✗ Trop de questions (max: ${exam.metadata.maxQuestions})`));
+        logger.info(chalk.cyan("Statut: ") + chalk.red(` Trop de questions (max: ${exam.metadata.maxQuestions})`));
       }
       
       logger.info(chalk.blue.bold("\n━━━ Questions ━━━\n"));
@@ -335,24 +335,24 @@ cli
       
       logger.info("");
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-validate", "Validate the current exam composition (EF02)")
+  .command("exam-validate", "Valider la composition de l'examen en cours (EF02)")
   .action(({ logger }) => {
     try {
       const validation = validateExam();
       
-      logger.info(chalk.green.bold("\n🔍 Validation de l'examen\n"));
+      logger.info(chalk.green.bold("\n Validation de l'examen\n"));
       
       if (validation.valid) {
-        logger.info(chalk.green.bold("✓ L'examen est valide!\n"));
+        logger.info(chalk.green.bold(" L'examen est valide!\n"));
         logger.info(chalk.cyan("Nombre de questions: ") + chalk.white(validation.stats.questionCount));
         logger.info(chalk.cyan("Types de questions: ") + chalk.white(Object.keys(validation.stats.typeDistribution).length));
       } else {
-        logger.info(chalk.red.bold("✗ L'examen n'est pas valide\n"));
+        logger.info(chalk.red.bold(" L'examen n'est pas valide\n"));
       }
       
       // Display errors
@@ -387,28 +387,28 @@ cli
         process.exit(1);
       }
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-clear", "Clear the current exam and start over (EF02)")
+  .command("exam-clear", "Effacer l'examen en cours et recommencer (EF02)")
   .action(({ logger }) => {
     try {
       clearExam();
-      logger.info(chalk.green("\n✓ L'examen a été effacé.\n"));
+      logger.info(chalk.green("\n L'examen a été effacé.\n"));
       logger.info(chalk.gray("Utilisez 'exam-init' pour créer un nouvel examen.\n"));
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-move", "Move a question to a different position (EF02)")
-  .argument("<from>", "Current position of the question (1-based)", {
+  .command("exam-move", "Deplacer une question vers une autre position (EF02)")
+  .argument("<from>", "Position actuelle de la question (commence a 1)", {
     validator: cli.NUMBER,
   })
-  .argument("<to>", "New position for the question (1-based)", {
+  .argument("<to>", "Nouvelle position pour la question (commence a 1)", {
     validator: cli.NUMBER,
   })
   .action(({ args, logger }) => {
@@ -416,20 +416,20 @@ cli
     
     try {
       const exam = moveQuestion(from, to);
-      logger.info(chalk.green(`\n✓ Question déplacée de la position ${from} vers la position ${to}\n`));
+      logger.info(chalk.green(`\n Question déplacée de la position ${from} vers la position ${to}\n`));
       logger.info(chalk.gray("Utilisez 'exam-list' pour voir l'ordre actuel des questions.\n"));
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-generate", "Generate a GIFT file from the current exam (EF03)")
-  .argument("[filename]", "Output filename (default: auto-generated from exam title)")
-  .option("-o, --output <dir>", "Output directory", {
+  .command("exam-generate", "Generer un fichier GIFT depuis l'examen en cours (EF03)")
+  .argument("[filename]", "Nom du fichier de sortie (par defaut: auto-genere depuis le titre)")
+  .option("-o, --output <dir>", "Repertoire de sortie", {
     default: "./output",
   })
-  .option("-f, --force", "Overwrite existing file without confirmation", {
+  .option("-f, --force", "Ecraser le fichier existant sans confirmation", {
     default: false,
   })
   .action(({ args, options, logger }) => {
@@ -440,14 +440,14 @@ cli
       const exam = getCurrentExam();
       
       if (!exam || exam.questions.length === 0) {
-        logger.error(chalk.red("\n✗ Aucun examen en cours ou l'examen est vide.\n"));
+        logger.error(chalk.red("\n Aucun examen en cours ou l'examen est vide.\n"));
         logger.info(chalk.gray("Utilisez 'exam-init' et 'exam-add' pour créer un examen.\n"));
         process.exit(1);
       }
       
       const validation = validateExam();
       if (!validation.valid) {
-        logger.error(chalk.red("\n✗ L'examen n'est pas valide. Impossible de générer le fichier GIFT.\n"));
+        logger.error(chalk.red("\n L'examen n'est pas valide. Impossible de générer le fichier GIFT.\n"));
         logger.error(chalk.red("Erreurs:"));
         validation.errors.forEach((err, i) => {
           logger.error(chalk.red(`  ${i + 1}. ${err}`));
@@ -460,38 +460,38 @@ cli
       const outputPath = path.join(output, outputFilename);
       
       if (fs.existsSync(outputPath) && !force) {
-        logger.error(chalk.yellow(`\n⚠ Le fichier "${outputPath}" existe déjà.\n`));
+        logger.error(chalk.yellow(`\n Le fichier "${outputPath}" existe déjà.\n`));
         logger.info(chalk.gray("Utilisez l'option --force pour écraser le fichier existant.\n"));
         process.exit(1);
       }
       
-      logger.info(chalk.blue("\n⏳ Génération du fichier GIFT...\n"));
+      logger.info(chalk.blue("\n Génération du fichier GIFT...\n"));
       
       const result = generateGiftFile(exam, outputPath);
       
-      logger.info(chalk.green.bold("✓ Fichier GIFT généré avec succès!\n"));
+      logger.info(chalk.green.bold(" Fichier GIFT généré avec succès!\n"));
       logger.info(chalk.cyan("Fichier: ") + chalk.white(outputPath));
       logger.info(chalk.cyan("Taille: ") + chalk.white(`${(result.size / 1024).toFixed(2)} KB`));
       logger.info(chalk.cyan("Questions: ") + chalk.white(result.questionCount));
       
       if (result.validation.warnings.length > 0) {
-        logger.info(chalk.yellow("\n⚠ Avertissements:"));
+        logger.info(chalk.yellow("\n Avertissements:"));
         result.validation.warnings.forEach((warn, i) => {
           logger.info(chalk.yellow(`  ${i + 1}. ${warn}`));
         });
       }
       
-      logger.info(chalk.gray("\n💡 Le fichier est prêt à être importé sur Moodle."));
+      logger.info(chalk.gray("\n Le fichier est prêt à être importé sur Moodle."));
       logger.info(chalk.gray(`   Chemin: ${outputPath}\n`));
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exam-preview", "Preview the GIFT file content without saving (EF03)")
-  .option("-l, --lines <number>", "Number of lines to display", {
+  .command("exam-preview", "Previsualiser le contenu du fichier GIFT sans sauvegarder (EF03)")
+  .option("-l, --lines <number>", "Nombre de lignes a afficher", {
     validator: cli.NUMBER,
     default: 30,
   })
@@ -502,11 +502,11 @@ cli
       const exam = getCurrentExam();
       
       if (!exam || exam.questions.length === 0) {
-        logger.error(chalk.red("\n✗ Aucun examen en cours ou l'examen est vide.\n"));
+        logger.error(chalk.red("\n Aucun examen en cours ou l'examen est vide.\n"));
         process.exit(1);
       }
       
-      logger.info(chalk.blue.bold("\n📄 Aperçu du fichier GIFT\n"));
+      logger.info(chalk.blue.bold("\n Aperçu du fichier GIFT\n"));
       
       const preview = previewGiftFile(exam, lines);
       
@@ -515,41 +515,41 @@ cli
       logger.info(chalk.gray("─".repeat(70)));
       
       if (preview.truncated) {
-        logger.info(chalk.yellow(`\n⚠ Aperçu tronqué: ${preview.showingLines}/${preview.totalLines} lignes affichées`));
+        logger.info(chalk.yellow(`\n Aperçu tronqué: ${preview.showingLines}/${preview.totalLines} lignes affichées`));
         logger.info(chalk.gray("Utilisez -l pour afficher plus de lignes ou 'exam-generate' pour créer le fichier complet.\n"));
       } else {
-        logger.info(chalk.green(`\n✓ Aperçu complet: ${preview.totalLines} lignes\n`));
+        logger.info(chalk.green(`\n Aperçu complet: ${preview.totalLines} lignes\n`));
       }
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("vcard-generate", "Generate a VCard file for a teacher (EF04)")
-  .option("--firstName <name>", "Teacher's first name (required)")
-  .option("--lastName <name>", "Teacher's last name (required)")
-  .option("--email <email>", "Teacher's email address")
-  .option("--phone <phone>", "Teacher's work phone number")
-  .option("--mobile <mobile>", "Teacher's mobile phone number")
-  .option("--organization <org>", "Organization name", {
+  .command("vcard-generate", "Generer un fichier VCard pour un enseignant (EF04)")
+  .option("--firstName <name>", "Prenom de l'enseignant (requis)")
+  .option("--lastName <name>", "Nom de famille de l'enseignant (requis)")
+  .option("--email <email>", "Adresse email de l'enseignant")
+  .option("--phone <phone>", "Numero de telephone professionnel")
+  .option("--mobile <mobile>", "Numero de telephone mobile")
+  .option("--organization <org>", "Nom de l'organisation", {
     default: "SRYEM - Ministère de l'Éducation nationale de Sealand"
   })
-  .option("--department <dept>", "Department name")
-  .option("--title <title>", "Job title", {
+  .option("--department <dept>", "Nom du departement")
+  .option("--title <title>", "Titre du poste", {
     default: "Enseignant"
   })
-  .option("--role <role>", "Professional role")
-  .option("--city <city>", "City")
-  .option("--country <country>", "Country", {
+  .option("--role <role>", "Role professionnel")
+  .option("--city <city>", "Ville")
+  .option("--country <country>", "Pays", {
     default: "Sealand"
   })
-  .option("--note <note>", "Additional notes")
-  .option("-o, --output <dir>", "Output directory", {
+  .option("--note <note>", "Notes additionnelles")
+  .option("-o, --output <dir>", "Repertoire de sortie", {
     default: "./output"
   })
-  .option("-f, --force", "Overwrite existing file without confirmation", {
+  .option("-f, --force", "Ecraser le fichier existant sans confirmation", {
     default: false
   })
   .action(({ options, logger }) => {
@@ -576,13 +576,13 @@ cli
       }
       
       if (!teacherData.firstName || !teacherData.lastName) {
-        logger.error(chalk.red("\n✗ Erreur: Les champs --firstName et --lastName sont obligatoires.\n"));
+        logger.error(chalk.red("\n Erreur: Les champs --firstName et --lastName sont obligatoires.\n"));
         logger.info(chalk.gray("Exemple: vcard-generate --firstName Jean --lastName Dupont --email jean.dupont@sryem.se\n"));
         process.exit(1);
       }
       
       if (teacherData.email && !validateEmail(teacherData.email)) {
-        logger.error(chalk.red("\n✗ Erreur: L'email fourni n'est pas valide.\n"));
+        logger.error(chalk.red("\n Erreur: L'email fourni n'est pas valide.\n"));
         logger.info(chalk.gray("Format attendu: nom@domaine.se\n"));
         process.exit(1);
       }
@@ -591,38 +591,38 @@ cli
       const outputPath = path.join(options.output, filename);
       
       if (fs.existsSync(outputPath) && !options.force) {
-        logger.error(chalk.yellow(`\n⚠ Le fichier "${outputPath}" existe déjà.\n`));
+        logger.error(chalk.yellow(`\n Le fichier "${outputPath}" existe déjà.\n`));
         logger.info(chalk.gray("Utilisez l'option --force pour écraser le fichier existant.\n"));
         process.exit(1);
       }
       
-      logger.info(chalk.blue("\n⏳ Génération de la VCard...\n"));
+      logger.info(chalk.blue("\n Génération de la VCard...\n"));
       
       const result = generateVCardFile(teacherData, outputPath);
       
-      logger.info(chalk.green.bold("✓ Fichier VCard généré avec succès!\n"));
+      logger.info(chalk.green.bold(" Fichier VCard généré avec succès!\n"));
       logger.info(chalk.cyan("Enseignant: ") + chalk.white(result.teacher));
       logger.info(chalk.cyan("Fichier: ") + chalk.white(outputPath));
       logger.info(chalk.cyan("Taille: ") + chalk.white(`${result.size} octets`));
       
-      logger.info(chalk.gray("\n💡 Le fichier peut être importé dans un carnet d'adresses."));
+      logger.info(chalk.gray("\n Le fichier peut être importé dans un carnet d'adresses."));
       logger.info(chalk.gray(`   Chemin: ${outputPath}\n`));
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("vcard-preview", "Preview VCard content (EF04)")
-  .option("--firstName <name>", "Teacher's first name (required)")
-  .option("--lastName <name>", "Teacher's last name (required)")
-  .option("--email <email>", "Teacher's email address")
-  .option("--phone <phone>", "Teacher's work phone number")
-  .option("--organization <org>", "Organization name", {
+  .command("vcard-preview", "Previsualiser le contenu d'une VCard (EF04)")
+  .option("--firstName <name>", "Prenom de l'enseignant (requis)")
+  .option("--lastName <name>", "Nom de famille de l'enseignant (requis)")
+  .option("--email <email>", "Adresse email de l'enseignant")
+  .option("--phone <phone>", "Numero de telephone professionnel")
+  .option("--organization <org>", "Nom de l'organisation", {
     default: "SRYEM - Ministère de l'Éducation nationale de Sealand"
   })
-  .option("--title <title>", "Job title", {
+  .option("--title <title>", "Titre du poste", {
     default: "Enseignant"
   })
   .action(({ options, logger }) => {
@@ -637,16 +637,16 @@ cli
       };
       
       if (!teacherData.firstName || !teacherData.lastName) {
-        logger.error(chalk.red("\n✗ Erreur: Les champs --firstName et --lastName sont obligatoires.\n"));
+        logger.error(chalk.red("\n Erreur: Les champs --firstName et --lastName sont obligatoires.\n"));
         process.exit(1);
       }
       
-      logger.info(chalk.blue.bold("\n📇 Aperçu de la VCard\n"));
+      logger.info(chalk.blue.bold("\n Aperçu de la VCard\n"));
       
       const preview = previewVCard(teacherData);
       
       if (!preview.valid) {
-        logger.error(chalk.red("✗ Données invalides:\n"));
+        logger.error(chalk.red(" Données invalides:\n"));
         preview.errors.forEach((err, i) => {
           logger.error(chalk.red(`  ${i + 1}. ${err}`));
         });
@@ -659,17 +659,17 @@ cli
       logger.info(chalk.gray("─".repeat(70)));
       console.log(preview.content);
       logger.info(chalk.gray("─".repeat(70)));
-      logger.info(chalk.green("\n✓ VCard valide selon RFC 6350\n"));
+      logger.info(chalk.green("\n VCard valide selon RFC 6350\n"));
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("simuler", "Simulate taking an exam from a GIFT file")
-  .argument("<examen>", "Path to the GIFT exam file")
-  .option("-s, --save <fichier>", "Save results to a file", {
+  .command("simuler", "Simuler la passation d'un examen depuis un fichier GIFT")
+  .argument("<examen>", "Chemin vers le fichier d'examen GIFT")
+  .option("-s, --save <fichier>", "Sauvegarder les resultats dans un fichier", {
     validator: cli.STRING,
   })
   .action(async ({ args, options, logger }) => {
@@ -678,7 +678,7 @@ cli
       
       // Check if file exists
       if (!fs.existsSync(examPath)) {
-        logger.error(chalk.red(`\n✗ Le fichier ${examPath} est introuvable. Vérifiez le chemin.\n`));
+        logger.error(chalk.red(`\n Le fichier ${examPath} est introuvable. Vérifiez le chemin.\n`));
         process.exit(1);
       }
       
@@ -694,7 +694,7 @@ cli
           output: process.stdout,
         });
         
-        rl.question("\n💾 Voulez-vous sauvegarder le bilan ? (o/n): ", (answer) => {
+        rl.question("\n Voulez-vous sauvegarder le bilan ? (o/n): ", (answer) => {
           if (answer.toLowerCase() === "o" || answer.toLowerCase() === "oui") {
             const defaultPath = `./resultats_${new Date().toISOString().split('T')[0]}.txt`;
             rl.question(`Nom du fichier [${defaultPath}]: `, (filename) => {
@@ -710,7 +710,7 @@ cli
       }
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       if (error.stack) {
         logger.debug(error.stack);
       }
@@ -718,25 +718,25 @@ cli
     }
   })
   
-  .command("verifier", "Verify the quality of a GIFT exam file")
-  .argument("<examen>", "Path to the GIFT exam file to verify")
+  .command("verifier", "Verifier la qualite d'un fichier d'examen GIFT")
+  .argument("<examen>", "Chemin vers le fichier d'examen GIFT a verifier")
   .action(({ args, logger }) => {
     try {
       const examPath = args.examen;
       
       // Check if file exists
       if (!fs.existsSync(examPath)) {
-        logger.error(chalk.red(`\n✗ Le fichier ${examPath} est introuvable.\n`));
+        logger.error(chalk.red(`\n Le fichier ${examPath} est introuvable.\n`));
         process.exit(1);
       }
       
-      logger.info(chalk.blue.bold("\n🔍 VÉRIFICATION DE LA QUALITÉ DE L'EXAMEN\n"));
+      logger.info(chalk.blue.bold("\n VÉRIFICATION DE LA QUALITÉ DE L'EXAMEN\n"));
       logger.info(chalk.gray(`Fichier: ${examPath}\n`));
       
       const result = verifyGiftExam(examPath);
       
       if (result.stats) {
-        logger.info(chalk.cyan("📊 Statistiques:"));
+        logger.info(chalk.cyan(" Statistiques:"));
         logger.info(`   Questions: ${result.stats.totalQuestions}`);
         logger.info(`   Types: ${Object.keys(result.stats.typeDistribution).join(", ")}`);
         Object.entries(result.stats.typeDistribution).forEach(([type, count]) => {
@@ -746,7 +746,7 @@ cli
       }
       
       if (result.errors.length > 0) {
-        logger.error(chalk.red.bold("❌ Erreurs détectées:\n"));
+        logger.error(chalk.red.bold(" Erreurs détectées:\n"));
         result.errors.forEach((error, i) => {
           logger.error(chalk.red(`   ${i + 1}. ${error}`));
         });
@@ -754,7 +754,7 @@ cli
       }
       
       if (result.warnings.length > 0) {
-        logger.warn(chalk.yellow.bold("⚠️  Avertissements:\n"));
+        logger.warn(chalk.yellow.bold("️  Avertissements:\n"));
         result.warnings.forEach((warning, i) => {
           logger.warn(chalk.yellow(`   ${i + 1}. ${warning}`));
         });
@@ -762,22 +762,22 @@ cli
       }
       
       if (result.valid) {
-        logger.info(chalk.green.bold("✅ Examen conforme aux règles du SRYEM\n"));
+        logger.info(chalk.green.bold(" Examen conforme aux règles du SRYEM\n"));
         process.exit(0);
       } else {
-        logger.error(chalk.red.bold("❌ L'examen ne peut pas être validé. Veuillez corriger les erreurs listées ci-dessus.\n"));
+        logger.error(chalk.red.bold(" L'examen ne peut pas être validé. Veuillez corriger les erreurs listées ci-dessus.\n"));
         process.exit(1);
       }
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("profil", "Generate a question type distribution histogram for an exam")
-  .argument("<examen>", "Path to the GIFT exam file")
-  .option("-s, --sortie <fichier>", "Save histogram to a file", {
+  .command("profil", "Generer un histogramme de distribution des types de questions")
+  .argument("<examen>", "Chemin vers le fichier d'examen GIFT")
+  .option("-s, --sortie <fichier>", "Sauvegarder l'histogramme dans un fichier", {
     validator: cli.STRING,
   })
   .action(({ args, options, logger }) => {
@@ -786,23 +786,23 @@ cli
       
       // Check if file exists
       if (!fs.existsSync(examPath)) {
-        logger.error(chalk.red(`\n✗ Le fichier ${examPath} est introuvable.\n`));
+        logger.error(chalk.red(`\n Le fichier ${examPath} est introuvable.\n`));
         process.exit(1);
       }
       
-      logger.info(chalk.blue.bold("\n📊 PROFIL DE L'EXAMEN\n"));
+      logger.info(chalk.blue.bold("\n PROFIL DE L'EXAMEN\n"));
       logger.info(chalk.gray(`Fichier: ${examPath}\n`));
       
       const result = generateProfileReport(examPath);
       
       if (!result.success) {
-        logger.error(chalk.red(`\n✗ Erreur: ${result.error}\n`));
+        logger.error(chalk.red(`\n Erreur: ${result.error}\n`));
         process.exit(1);
       }
       
       console.log(result.histogram);
       
-      logger.info(chalk.cyan("\n📈 Statistiques:"));
+      logger.info(chalk.cyan("\n Statistiques:"));
       logger.info(`   Nombre de types différents: ${result.stats.typeCount}`);
       logger.info(`   Type le plus fréquent: ${
         Object.entries(result.stats.typeDistribution)
@@ -814,25 +814,25 @@ cli
         const saveResult = saveProfileToFile(result.histogram, options.sortie);
         
         if (saveResult.success) {
-          logger.info(chalk.green(`✓ Histogramme sauvegardé sous ${options.sortie}\n`));
+          logger.info(chalk.green(` Histogramme sauvegardé sous ${options.sortie}\n`));
         } else {
-          logger.error(chalk.red(`✗ Erreur lors de la sauvegarde: ${saveResult.error}\n`));
+          logger.error(chalk.red(` Erreur lors de la sauvegarde: ${saveResult.error}\n`));
           process.exit(1);
         }
       }
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("comparer", "Compare an exam profile with the question bank")
-  .argument("<examen>", "Path to the exam GIFT file")
-  .option("-b, --banque <path>", "Path to bank file or directory (default: ./data)", {
+  .command("comparer", "Comparer le profil d'un examen avec la banque de questions")
+  .argument("<examen>", "Chemin vers le fichier d'examen GIFT")
+  .option("-b, --banque <path>", "Chemin vers le fichier ou repertoire de la banque (defaut: ./data)", {
     default: "./data",
   })
-  .option("-s, --sortie <fichier>", "Save comparison report to a file", {
+  .option("-s, --sortie <fichier>", "Sauvegarder le rapport de comparaison dans un fichier", {
     validator: cli.STRING,
   })
   .action(({ args, options, logger }) => {
@@ -841,23 +841,23 @@ cli
       const bankPath = options.banque;
       
       if (!fs.existsSync(examPath)) {
-        logger.error(chalk.red(`\n✗ Le fichier d'examen ${examPath} est introuvable.\n`));
+        logger.error(chalk.red(`\n Le fichier d'examen ${examPath} est introuvable.\n`));
         process.exit(1);
       }
       
       if (!fs.existsSync(bankPath)) {
-        logger.error(chalk.red(`\n✗ La banque ${bankPath} est introuvable.\n`));
+        logger.error(chalk.red(`\n La banque ${bankPath} est introuvable.\n`));
         process.exit(1);
       }
       
-      logger.info(chalk.blue.bold("\n📊 COMPARAISON DES PROFILS\n"));
+      logger.info(chalk.blue.bold("\n COMPARAISON DES PROFILS\n"));
       logger.info(chalk.gray(`Examen: ${examPath}`));
       logger.info(chalk.gray(`Banque: ${bankPath}\n`));
       
       const comparison = compareProfiles(examPath, bankPath);
       
       if (!comparison.success) {
-        logger.error(chalk.red(`\n✗ ${comparison.error}\n`));
+        logger.error(chalk.red(`\n ${comparison.error}\n`));
         process.exit(1);
       }
       
@@ -869,43 +869,43 @@ cli
         const saveResult = saveComparisonReport(report, options.sortie);
         
         if (saveResult.success) {
-          logger.info(chalk.green(`\n✓ Rapport de comparaison sauvegardé sous ${options.sortie}\n`));
+          logger.info(chalk.green(`\n Rapport de comparaison sauvegardé sous ${options.sortie}\n`));
         } else {
-          logger.error(chalk.red(`\n✗ Erreur lors de la sauvegarde: ${saveResult.error}\n`));
+          logger.error(chalk.red(`\n Erreur lors de la sauvegarde: ${saveResult.error}\n`));
           process.exit(1);
         }
       }
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("importer", "Import and validate a GIFT file")
-  .argument("<fichier>", "Path to the GIFT file to import")
-  .option("-b, --banque", "Import to the question bank (./data)", {
+  .command("importer", "Importer et valider un fichier GIFT")
+  .argument("<fichier>", "Chemin vers le fichier GIFT a importer")
+  .option("-b, --banque", "Importer dans la banque de questions (./data)", {
     default: false,
   })
   .action(({ args, options, logger }) => {
     try {
       const filePath = args.fichier;
       
-      logger.info(chalk.blue.bold("\n📥 IMPORT DE FICHIER GIFT\n"));
+      logger.info(chalk.blue.bold("\n IMPORT DE FICHIER GIFT\n"));
       logger.info(chalk.gray(`Fichier: ${filePath}\n`));
       
       if (options.banque) {
         const result = importToBank(filePath);
         
         if (!result.success) {
-          logger.error(chalk.red(`✗ ${result.error}\n`));
+          logger.error(chalk.red(` ${result.error}\n`));
           process.exit(1);
         }
         
-        logger.info(chalk.green.bold("✅ Fichier importé dans la banque avec succès!\n"));
-        logger.info(chalk.cyan(`📁 Destination: ${result.destinationPath}`));
-        logger.info(chalk.cyan(`📝 Questions chargées: ${result.questionsImported}`));
-        logger.info(chalk.cyan(`📊 Répartition par type:`));
+        logger.info(chalk.green.bold(" Fichier importé dans la banque avec succès!\n"));
+        logger.info(chalk.cyan(`Destination: ${result.destinationPath}`));
+        logger.info(chalk.cyan(` Questions chargées: ${result.questionsImported}`));
+        logger.info(chalk.cyan(` Répartition par type:`));
         Object.entries(result.typeDistribution).forEach(([type, count]) => {
           logger.info(`   - ${type}: ${count}`);
         });
@@ -915,19 +915,19 @@ cli
         const result = importGiftFile(filePath);
         
         if (!result.success) {
-          logger.error(chalk.red(`✗ ${result.error}\n`));
+          logger.error(chalk.red(` ${result.error}\n`));
           process.exit(1);
         }
         
-        logger.info(chalk.green.bold("✅ Fichier GIFT valide!\n"));
-        logger.info(chalk.cyan(`📝 Questions totales: ${result.totalQuestions}`));
-        logger.info(chalk.cyan(`✓  Questions valides: ${result.validQuestions}`));
+        logger.info(chalk.green.bold(" Fichier GIFT valide!\n"));
+        logger.info(chalk.cyan(` Questions totales: ${result.totalQuestions}`));
+        logger.info(chalk.cyan(`  Questions valides: ${result.validQuestions}`));
         
         if (result.invalidQuestions > 0) {
-          logger.warn(chalk.yellow(`⚠  Questions invalides: ${result.invalidQuestions}`));
+          logger.warn(chalk.yellow(`  Questions invalides: ${result.invalidQuestions}`));
         }
         
-        logger.info(chalk.cyan(`\n📊 Répartition par type:`));
+        logger.info(chalk.cyan(`\n Répartition par type:`));
         Object.entries(result.typeDistribution).forEach(([type, count]) => {
           logger.info(`   - ${type}: ${count}`);
         });
@@ -935,37 +935,37 @@ cli
       }
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   })
   
-  .command("exporter", "Export a GIFT file to a destination")
-  .argument("<source>", "Path to the source GIFT file")
-  .argument("<destination>", "Destination path (file or directory)")
+  .command("exporter", "Exporter un fichier GIFT vers une destination")
+  .argument("<source>", "Chemin vers le fichier GIFT source")
+  .argument("<destination>", "Chemin de destination (fichier ou repertoire)")
   .action(({ args, logger }) => {
     try {
       const sourcePath = args.source;
       const destPath = args.destination;
       
-      logger.info(chalk.blue.bold("\n📤 EXPORT DE FICHIER GIFT\n"));
+      logger.info(chalk.blue.bold("\n EXPORT DE FICHIER GIFT\n"));
       logger.info(chalk.gray(`Source: ${sourcePath}`));
       logger.info(chalk.gray(`Destination: ${destPath}\n`));
       
       const result = exportGiftFile(sourcePath, destPath);
       
       if (!result.success) {
-        logger.error(chalk.red(`✗ ${result.error}\n`));
+        logger.error(chalk.red(` ${result.error}\n`));
         process.exit(1);
       }
       
-      logger.info(chalk.green.bold("✅ Fichier exporté avec succès!\n"));
-      logger.info(chalk.cyan(`📁 Destination: ${result.destinationFile}`));
-      logger.info(chalk.cyan(`📝 Questions exportées: ${result.questionsExported}`));
+      logger.info(chalk.green.bold(" Fichier exporté avec succès!\n"));
+      logger.info(chalk.cyan(`Destination: ${result.destinationFile}`));
+      logger.info(chalk.cyan(` Questions exportées: ${result.questionsExported}`));
       logger.info("");
       
     } catch (error) {
-      logger.error(chalk.red(`\n✗ Erreur: ${error.message}\n`));
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);
     }
   });

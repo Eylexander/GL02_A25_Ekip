@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 function detectQuestionType(questionContent) {
+  // Check for explicitly marked question types first
   if (questionContent.match(/\{1:MC:/)) {
     return "MultipleChoice";
   }
@@ -10,24 +11,36 @@ function detectQuestionType(questionContent) {
     return "ShortAnswer";
   }
   
+  // Check for Numerical questions (must come before other checks)
+  if (questionContent.match(/\{#[^}]*\}/)) {
+    return "Numerical";
+  }
+  
+  // Check for Matching questions
   if (questionContent.match(/\{[^}]*=[^~][^}]*->/)) {
     return "Matching";
   }
   
+  // Check for TrueFalse questions (including those with feedback)
+  // Matches {TRUE}, {FALSE}, {T}, {F} and variations with feedback like {FALSE#feedback#more}
+  // Also handles newlines after opening brace
+  if (questionContent.match(/\{\s*(TRUE|FALSE|T|F)([#~}\s]|$)/i)) {
+    return "TrueFalse";
+  }
+  
+  // Check for Multiple Choice questions (contains ~)
   if (questionContent.match(/\{[^}]*~[^}]*\}/)) {
     return "MultipleChoice";
   }
   
+  // Check for ShortAnswer questions (contains = but not -> and not ~)
   if (questionContent.match(/\{[^}]*=[^~][^}]*\}/) && !questionContent.includes("->")) {
     return "ShortAnswer";
   }
   
-  if (questionContent.match(/\{(TRUE|FALSE|T|F)\}/i)) {
-    return "TrueFalse";
-  }
-  
-  if (questionContent.match(/\{#[^}]*\}/)) {
-    return "Numerical";
+  // Check for empty answer blocks {} - these are essay/fill-in questions
+  if (questionContent.match(/\{\s*\}/)) {
+    return "Essay";
   }
   
   return "Unknown";
@@ -164,6 +177,10 @@ function parseGiftFile(filePath) {
         
         if (questionContent.length >= 5 && questionContent.includes("{")) {
           const type = detectQuestionType(questionContent);
+          if (type === "Unknown") {
+            console.log("Type de question inconnu:", questionContent);
+            console.log("Chemin:", filePath);
+          }
           const questionText = extractQuestionText(questionContent);
           const answers = extractAnswers(questionContent);
           
@@ -259,7 +276,7 @@ function searchQuestions(dataDir, type, keyword) {
           }
         });
       } catch (error) {
-        console.error(`Error parsing file ${file}: ${error.message}`);
+        console.error(`Erreur lors de l'analyse du fichier ${file}: ${error.message}`);
       }
     }
   });
@@ -289,7 +306,7 @@ function getQuestionStats(dataDir) {
           stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
         });
       } catch (error) {
-        console.error(`Error parsing file ${file}: ${error.message}`);
+        console.error(`Erreur lors de l'analyse du fichier ${file}: ${error.message}`);
       }
     }
   });

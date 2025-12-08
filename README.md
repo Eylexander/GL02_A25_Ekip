@@ -23,9 +23,9 @@ Le parser reconnaît automatiquement les types suivants :
 | **MultipleChoice** | Questions à choix multiples | `{~wrong~=correct~wrong}` ou `{1:MC:~=correct~wrong}` |
 | **ShortAnswer** | Questions à réponse courte | `{=answer1 =answer2}` ou `{1:SA:=answer}` |
 | **Matching** | Questions d'association | `{=item1->match1 =item2->match2}` |
-| **TrueFalse** | Questions vrai/faux | `{TRUE}` ou `{FALSE}` |
-| **Numerical** | Questions numériques | `{#42}` |
-| **Unknown** | Type non reconnu | - |
+| **TrueFalse** | Questions vrai/faux | `{TRUE}` ou `{FALSE}` (supporte le feedback) |
+| **Numerical** | Questions numériques | `{#42}` ou `{#1822:0}` |
+| **Essay** | Questions à développement/réponse libre | `{}` (bloc de réponse vide) |
 
 ### Architecture
 
@@ -63,12 +63,6 @@ Parser GIFT et recherche de questions.
 - `getQuestionStats(dataDir)` : Calcule les statistiques de la banque
 - `getAvailableTypes(dataDir)` : Liste tous les types de questions disponibles
 
-**Formats supportés :**
-
-- Questions inline : `{~wrong~=correct}`
-- Questions multi-lignes avec feedback
-- Préfixes spéciaux : `1:MC:`, `1:SA:`
-- Réponses multiples : `{=answer1 =answer2}`
 
 ### `examManager.js`
 
@@ -212,68 +206,7 @@ Import/export de fichiers GIFT.
 - Protection contre écrasement
 - Statistiques d'import
 
-### `index.js`
 
-Interface CLI complète avec toutes les commandes.
-
-**Commandes disponibles :**
-
-**Recherche et analyse (EF01) :**
-
-- `search [type] [keyword]` : Recherche de questions
-- `stats` : Statistiques de la banque
-- `types` : Liste des types disponibles
-
-**Composition d'examens (EF02) :**
-
-- `new-exam <titre>` : Initialiser un examen
-- `add-question` : Ajouter une question (interactif)
-- `list-exam [-v]` : Lister les questions
-- `remove-question <position>` : Retirer une question
-- `move-question <from> <to>` : Déplacer une question
-- `clear-exam` : Effacer l'examen
-- `validate-exam` : Valider l'examen
-
-**Génération GIFT (EF03) :**
-
-- `generate-gift [filename]` : Générer fichier GIFT
-- `preview-gift [-l <lines>]` : Aperçu de l'examen
-
-**VCard enseignants (EF04) :**
-
-- `vcard-generate` : Générer VCard
-- `vcard-preview` : Aperçu VCard
-
-**Simulation (EF05) :**
-
-- `simuler <examen>` : Simuler un examen
-- Option `-save` pour sauvegarder résultats
-
-**Vérification qualité (EF06) :**
-
-- `verifier <examen>` : Vérifier qualité
-
-**Profil d'examen (EF07) :**
-
-- `profil <examen>` : Générer histogramme
-- Option `-sortie` pour sauvegarder
-
-**Comparaison de profils (EF08) :**
-
-- `comparer <examen>` : Comparer avec banque
-- Option `-banque` pour spécifier source
-- Option `-sortie` pour sauvegarder
-
-**Import/Export (EF10) :**
-
-- `importer <fichier>` : Valider fichier GIFT
-- Option `-banque` pour importer dans banque
-- `exporter <source> <destination>` : Exporter fichier
-
-**Aide :**
-
-- `-help` : Aide globale ou par commande
-- `-version` : Version du programme
 
 ### Format GIFT
 
@@ -328,18 +261,49 @@ Les fichiers GIFT sont structurés comme suit :
 
 ```
 
+**True/False:**
+
+```
+::Q4::La Terre est plate. {
+  FALSE#Correct! La Terre est ronde.#Bien joué!
+}
+
+```
+
+**Numerical:**
+
+```
+::Q5::Quand est né Ulysses S. Grant? {#
+  =1822:0
+  =%50%1822:2
+}
+
+```
+
+**Essay (Fill-in-the-blank):**
+
+```
+::Q6::[html]
+<b>A:</b> I hit my head on the windscreen. (<i>wear a seatbelt</i>)<br>
+<b>B:</b> You ____. {}
+
+```
+
 ## Statistiques de la Banque Actuelle
 
 - **47 fichiers** GIFT
-- **480 questions** au total
-- **~10 questions** par fichier en moyenne
+- **425 questions** au total
+- **~9 questions** par fichier en moyenne
 
 Répartition par type :
 
-- MultipleChoice: 47.1% (226 questions)
-- ShortAnswer: 37.5% (180 questions)
-- Unknown: 12.9% (62 questions)
-- Matching: 2.5% (12 questions)
+- MultipleChoice: 53.2% (226 questions)
+- ShortAnswer: 42.1% (179 questions)
+- Matching: 2.8% (12 questions)
+- Essay: 1.4% (6 questions)
+- TrueFalse: 0.2% (1 question)
+- Numerical: 0.2% (1 question)
+- Unknown: 0.0% (0 questions)
 
 # Guide d’installation
 
@@ -370,6 +334,9 @@ node index.js search
 node index.js search MultipleChoice
 node index.js search ShortAnswer
 node index.js search Matching
+node index.js search Essay
+node index.js search TrueFalse
+node index.js search Numerical
 
 # Rechercher avec un mot-clé
 node index.js search "" "adverb"
@@ -1032,7 +999,7 @@ node index.js exporter output/exam.gift exports/
 
 **Pour utilisateurs finaux :**
 
-- [README.md](http://readme.md/) complet (691 lignes)
+- [README.md](http://readme.md/) 
 - Guide d'installation
 - 25+ exemples d'utilisation
 - Workflow complet étape par étape
@@ -1067,10 +1034,16 @@ comment = "//" *(WSP / VCHAR) CRLF
 
 Celui ci a du être modifié (et suit la structure indiqué dans la partie EF03) puisque ce format simplifié ne pouvait pas géré les questions qui attendent plusieurs réponses comme les textes à trous.
 
-## 👥 Auteurs
+Le point "EF09 - Gestion des erreurs" n'a pas une partie à part entière, puisque la gestion des erreurs est intégrée des autres fonctionnalités.
+
+Nous voulons également spécifier que nous avons interprété le cahier des charges comme suit:
+Pour la génération des examens, nous les exportons en même temps dans le fichier output. Pour simuler un examen, nous importons aussi ce fichier. 
+Nous avons quand même réalisé en plus, dans une partie à part la fonctionnalité EF10 d'export et import des examens.
+
+## Auteurs
 
 EKIP - Projet développé pour le SRYEM (Ministère de l'Éducation nationale de Sealand)
 
-## 📄 Licence
+## Licence
 
 À définir selon les politiques du SRYEM

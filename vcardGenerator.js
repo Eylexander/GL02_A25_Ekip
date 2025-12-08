@@ -1,20 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-/**
- * RFC 6868: Parameter Value Encoding
- * Encode special characters in vCard parameter values
- */
-function encodeParameterValue(value) {
-  return value
-    .replace(/\^/g, '^^')    // Circumflex must be encoded first
-    .replace(/\n/g, '^n')    // Newline
-    .replace(/"/g, '^\'');   // Double quote
-}
 
-/**
- * RFC 6350: Escape special characters in vCard property values
- */
 function escapeVCardValue(value) {
   return value
     .replace(/\\/g, '\\\\')  // Backslash
@@ -23,9 +10,7 @@ function escapeVCardValue(value) {
     .replace(/\n/g, '\\n');  // Newline
 }
 
-/**
- * Fold long lines to 75 characters as per RFC 6350
- */
+
 function foldLine(line) {
   if (line.length <= 75) {
     return line;
@@ -47,30 +32,23 @@ function foldLine(line) {
   return folded.join('\r\n');
 }
 
-/**
- * Validate email format
- */
+
 function validateEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
-/**
- * Validate phone number (basic validation)
- */
+
 function validatePhone(phone) {
   // Accept various formats: +33123456789, 0123456789, +33 1 23 45 67 89, etc.
   const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/;
   return phoneRegex.test(phone.replace(/\s/g, ''));
 }
 
-/**
- * Validate required fields for VCard
- */
+
 function validateVCardData(data) {
   const errors = [];
   
-  // Required fields
   if (!data.lastName || data.lastName.trim() === '') {
     errors.push("Le nom de famille de l'enseignant est obligatoire. Veuillez le spécifier.");
   }
@@ -79,7 +57,6 @@ function validateVCardData(data) {
     errors.push("Le prénom de l'enseignant est obligatoire. Veuillez le spécifier.");
   }
   
-  // Email validation
   if (data.email) {
     if (!validateEmail(data.email)) {
       errors.push(
@@ -103,13 +80,9 @@ function validateVCardData(data) {
   };
 }
 
-/**
- * Generate VCard 4.0 content compliant with RFC 6350 and RFC 6868
- */
 function generateVCardContent(teacherData) {
   const lines = [];
   
-  // Begin vCard
   lines.push('BEGIN:VCARD');
   lines.push('VERSION:4.0');
   
@@ -196,9 +169,7 @@ function generateVCardContent(teacherData) {
   return foldedLines.join('\r\n') + '\r\n';
 }
 
-/**
- * Save VCard file to disk
- */
+
 function saveVCardFile(content, filePath) {
   try {
     // Create directory if it doesn't exist
@@ -232,11 +203,7 @@ function saveVCardFile(content, filePath) {
   }
 }
 
-/**
- * Generate and save a VCard file for a teacher
- */
 function generateVCardFile(teacherData, outputPath) {
-  // Validate input data
   const validation = validateVCardData(teacherData);
   
   if (!validation.valid) {
@@ -245,10 +212,8 @@ function generateVCardFile(teacherData, outputPath) {
     throw new Error(errorMsg);
   }
   
-  // Generate content
-  const content = generateVCardContent(teacherData);
+    const content = generateVCardContent(teacherData);
   
-  // Save file
   const result = saveVCardFile(content, outputPath);
   
   return {
@@ -257,11 +222,7 @@ function generateVCardFile(teacherData, outputPath) {
   };
 }
 
-/**
- * Get default VCard filename based on teacher name
- */
 function getDefaultVCardFilename(firstName, lastName) {
-  // Sanitize name for filename
   const sanitized = `${firstName}_${lastName}`
     .toLowerCase()
     .normalize('NFD')
@@ -272,9 +233,7 @@ function getDefaultVCardFilename(firstName, lastName) {
   return `vcard_${sanitized}.vcf`;
 }
 
-/**
- * Parse teacher data from exam metadata (if available)
- */
+
 function extractTeacherFromExam(exam) {
   if (exam.teacher) {
     return exam.teacher;
@@ -290,9 +249,7 @@ function extractTeacherFromExam(exam) {
   };
 }
 
-/**
- * Preview VCard content
- */
+
 function previewVCard(teacherData) {
   const validation = validateVCardData(teacherData);
   

@@ -126,7 +126,7 @@ async function askForAnswer(rl, question, gapInfo = null) {
           if (choice >= 0 && choice < gapInfo.answers.length) {
             resolve({ type: "choice", value: choice, text: gapInfo.answers[choice].text });
           } else {
-            console.log("⚠️  Choix invalide. Veuillez réessayer.");
+            console.log("Choix invalide. Veuillez reessayer.");
             resolve(askForAnswer(rl, question, gapInfo));
           }
         });
@@ -141,7 +141,7 @@ async function askForAnswer(rl, question, gapInfo = null) {
           if (choice >= 0 && choice < question.answers.length) {
             resolve({ type: "choice", value: choice, text: question.answers[choice].text });
           } else {
-            console.log("⚠️  Choix invalide. Veuillez réessayer.");
+            console.log("Choix invalide. Veuillez reessayer.");
             resolve(askForAnswer(rl, question));
           }
         });
@@ -189,7 +189,7 @@ async function simulateExam(giftFilePath) {
   }
   
   console.log("\n" + "=".repeat(70));
-  console.log("🎓 SIMULATION D'EXAMEN");
+  console.log("SIMULATION D'EXAMEN");
   console.log("=".repeat(70));
   console.log(`\nChargement de l'examen depuis: ${path.basename(giftFilePath)}`);
   
@@ -199,7 +199,7 @@ async function simulateExam(giftFilePath) {
     throw new Error("Aucune question trouvée dans le fichier GIFT.");
   }
   
-  console.log(`✓ ${questions.length} questions chargées avec succès.\n`);
+  console.log(`${questions.length} questions chargees avec succes.\n`);
   console.log("Instructions:");
   console.log("- Pour les questions à choix multiple, entrez le numéro de votre choix");
   console.log("- Pour les questions ouvertes, tapez votre réponse");
@@ -224,7 +224,7 @@ async function simulateExam(giftFilePath) {
     const gaps = parseQuestionGaps(question);
     
     if (gaps.length > 1) {
-      console.log(`\n📝 Cette question contient ${gaps.length} trous à remplir.`);
+      console.log(`\nCette question contient ${gaps.length} trous a remplir.`);
       
       const gapResults = [];
       for (const gap of gaps) {
@@ -252,7 +252,7 @@ async function simulateExam(giftFilePath) {
         hasMultipleGaps: true,
       });
       
-      console.log(`\n✓ Question complétée (${correctGaps}/${gaps.length} trous corrects)`);
+      console.log(`\nQuestion completee (${correctGaps}/${gaps.length} trous corrects)`);
     } else {
       const userAnswer = await askForAnswer(rl, question);
       const isCorrect = checkAnswer(question, userAnswer);
@@ -271,7 +271,7 @@ async function simulateExam(giftFilePath) {
         hasMultipleGaps: false,
       });
       
-      console.log(`\n✓ Question complétée`);
+      console.log(`\nQuestion completee`);
     }
   }
   
@@ -282,7 +282,7 @@ async function simulateExam(giftFilePath) {
 
 function calculateResults(results) {
   console.log("\n" + "=".repeat(70));
-  console.log("📊 RÉSULTATS DE L'EXAMEN");
+  console.log("RESULTATS DE L'EXAMEN");
   console.log("=".repeat(70));
   
   let totalScore = 0;
@@ -297,7 +297,7 @@ function calculateResults(results) {
       console.log(`Score: ${(result.score * 100).toFixed(0)}% (${correctGaps}/${result.gaps.length} trous corrects)`);
       
       result.gaps.forEach((gap) => {
-        const icon = gap.correct ? "✅" : "❌";
+        const icon = gap.correct ? "[OK]" : "[ERREUR]";
         console.log(`  ${icon} Trou ${gap.gapIndex}: ${gap.userAnswer}`);
         if (!gap.correct) {
           console.log(`     Réponse(s) correcte(s): ${gap.correctAnswers.join(" OU ")}`);
@@ -306,7 +306,7 @@ function calculateResults(results) {
       
       totalScore += result.score;
     } else {
-      const icon = result.correct ? "✅" : "❌";
+      const icon = result.correct ? "[OK]" : "[ERREUR]";
       console.log(`${icon} Votre réponse: ${result.userAnswer}`);
       
       if (!result.correct) {
@@ -321,20 +321,20 @@ function calculateResults(results) {
   const note = (totalScore / maxScore) * 20;
   
   console.log("\n" + "=".repeat(70));
-  console.log("📈 BILAN FINAL");
+  console.log("BILAN FINAL");
   console.log("=".repeat(70));
   console.log(`Score: ${totalScore.toFixed(2)}/${maxScore}`);
   console.log(`Pourcentage: ${percentage.toFixed(2)}%`);
   console.log(`Note: ${note.toFixed(2)}/20`);
   
   if (percentage >= 90) {
-    console.log("\n🎉 Excellent travail !");
+    console.log("\nExcellent travail !");
   } else if (percentage >= 75) {
-    console.log("\n👍 Très bien !");
+    console.log("\nTres bien !");
   } else if (percentage >= 50) {
-    console.log("\n📚 Bien, mais il y a de la place pour amélioration.");
+    console.log("\nBien, mais il y a de la place pour amelioration.");
   } else {
-    console.log("\n💪 Continuez à pratiquer !");
+    console.log("\nContinuez a pratiquer !");
   }
   
   return {
@@ -388,7 +388,7 @@ function saveResults(examResults, outputPath) {
   });
   
   fs.writeFileSync(outputPath, content, "utf8");
-  console.log(`\n✓ Bilan sauvegardé dans: ${outputPath}`);
+  console.log(`\nBilan sauvegarde dans: ${outputPath}`);
 }
 
 module.exports = {
