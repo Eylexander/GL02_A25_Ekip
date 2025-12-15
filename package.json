@@ -3,5 +3,11 @@
     "@caporal/core": "^2.0.7",
     "chalk": "^4.1.2",
     "fs": "^0.0.1-security"
+  },
+  "devDependencies": {
+    "jasmine": "^5.13.0"
+  },
+  "scripts": {
+    "test": "jasmine"
   }
 }
