@@ -14,6 +14,30 @@ Cet outil permet aux enseignants et gestionnaires de :
 
 La banque de questions initiales nous a été fournis par le client, et se situe dans le dossier “data”.
 
+## Installation
+
+### Prérequis
+
+- [Node.js](https://nodejs.org/) (version 14 ou supérieure recommandée)
+- [npm](https://www.npmjs.com/) (normalement inclus avec Node.js)
+
+### Étapes d'installation
+
+1.  Clonez ce dépôt (si ce n'est pas déjà fait) et naviguez dans le dossier du projet :
+    ```bash
+    cd GL02_A25_Ekip
+    ```
+
+2.  Installez les dépendances nécessaires :
+    ```bash
+    npm install
+    ```
+
+3.  Vérifiez l'installation en affichant l'aide :
+    ```bash
+    node index.js --help
+    ```
+
 ### **Types de Questions Supportés**
 
 Le parser reconnaît automatiquement les types suivants :
@@ -1042,8 +1066,11 @@ Nous avons quand même réalisé en plus, dans une partie à part la fonctionnal
 
 ## Auteurs
 
-EKIP - Projet développé pour le SRYEM (Ministère de l'Éducation nationale de Sealand)
+Ce projet a été conçu et développé par l'équipe **EKIP** dans le cadre de l'unité d'enseignement **GL02** à l'**Université de Technologie de Troyes (UTT)** (Semestre Automne 2025).
+
+Projet développé pour le **SRYEM** (Ministère de l'Éducation nationale de Sealand).
 
 ## Licence
 
-À définir selon les politiques du SRYEM
+Ce code source est mis à disposition sous licence **MIT**.
+Vous êtes libre de l'utiliser, le modifier et le distribuer, sous réserve de mentionner les auteurs originaux.
