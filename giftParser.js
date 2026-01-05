@@ -251,19 +251,26 @@ function parseGiftFile(filePath) {
 function searchQuestions(dataDir, type, keyword) {
   const files = fs.readdirSync(dataDir);
   const results = [];
-  
+    if (type[0].toUpperCase() !== type[0]){
+        keyword = type
+        type = null
+    }
   files.forEach((file) => {
     if (file.endsWith(".gift")) {
       const filePath = path.join(dataDir, file);
       try {
         const questions = parseGiftFile(filePath);
         questions.forEach((q) => {
-          const matchesType = !type || q.type.toLowerCase() === type.toLowerCase();
+            let matchesType
+            if (type === null && keyword){
+                matchesType = true;
+            }else {
+                matchesType = !type || q.type.toLowerCase() === type.toLowerCase();
+            }
           const matchesKeyword = !keyword || 
             q.title.toLowerCase().includes(keyword.toLowerCase()) ||
             q.questionText.toLowerCase().includes(keyword.toLowerCase()) ||
             q.content.toLowerCase().includes(keyword.toLowerCase());
-          
           if (matchesType && matchesKeyword) {
             results.push({
               file: file,
