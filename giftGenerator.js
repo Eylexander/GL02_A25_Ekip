@@ -18,6 +18,11 @@ function generateGiftHeader(exam) {
   header.push("// ========================================");
   header.push(`// Généré le: ${formatDate(new Date())}`);
   header.push(`// Nombre de questions: ${exam.questions.length}`);
+  
+  // Calculate total points
+  const totalPoints = exam.questions.reduce((total, q) => total + (q.weight || 1), 0);
+  header.push(`// Points totaux: ${totalPoints}`);
+  
   header.push(`// Format: GIFT (Moodle)`);
   header.push("//");
   header.push(`// Créé le: ${formatDate(exam.createdAt)}`);
@@ -37,6 +42,7 @@ function questionToGift(question, index) {
   lines.push(`// Question ${index + 1}`);
   lines.push(`// Type: ${question.type}`);
   lines.push(`// Source: ${question.file}`);
+  lines.push(`// Points: ${question.weight || 1}`);
   lines.push("");
   
   const giftLine = `::${question.title}::${question.content}`;

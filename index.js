@@ -14,6 +14,9 @@ const {
   validateExam,
   getExamStats,
   moveQuestion,
+  setQuestionWeight,
+  calculateTotalPoints,
+  shuffleQuestions,
 } = require("./examManager");
 const {
   generateGiftFile,
@@ -310,6 +313,7 @@ cli
         logger.info(chalk.yellow(`${(i + 1).toString().padStart(2)}. `) + chalk.white(q.title));
         logger.info(chalk.gray(`    Fichier: ${q.file}`));
         logger.info(chalk.gray(`    Type: ${q.type}`));
+        logger.info(chalk.gray(`    Points: ${q.weight || 1}`));
         
         if (verbose) {
           logger.info(chalk.gray(`    Texte: ${q.questionText.substring(0, 100)}${q.questionText.length > 100 ? '...' : ''}`));
@@ -322,6 +326,7 @@ cli
       
       // Statistics
       const stats = getExamStats();
+      const totalPoints = calculateTotalPoints();
       logger.info(chalk.blue.bold("━━━ Statistiques ━━━\n"));
       logger.info(chalk.cyan("Répartition par type:"));
       Object.entries(stats.typeDistribution)
@@ -330,6 +335,7 @@ cli
           const percentage = ((count / stats.questionCount) * 100).toFixed(1);
           logger.info(`  ${chalk.yellow(type.padEnd(20))} ${count.toString().padStart(2)} ${chalk.gray(`(${percentage}%)`)}`);
         });
+      logger.info(chalk.cyan("Points totaux: ") + chalk.yellow(totalPoints));
       
       logger.info(chalk.cyan("\nFichiers sources: ") + chalk.white(stats.fileCount));
       
@@ -374,6 +380,14 @@ cli
       
       logger.info(chalk.blue.bold("Statistiques:"));
       logger.info(chalk.cyan("  Questions: ") + chalk.white(validation.stats.questionCount));
+      
+      // Display scoring information
+      if (validation.stats.scoring) {
+        logger.info(chalk.cyan("  Points totaux: ") + chalk.white(validation.stats.scoring.totalPoints));
+        logger.info(chalk.cyan("  Poids minimum: ") + chalk.white(validation.stats.scoring.minWeight));
+        logger.info(chalk.cyan("  Poids maximum: ") + chalk.white(validation.stats.scoring.maxWeight));
+      }
+      
       logger.info(chalk.cyan("  Répartition par type:"));
       Object.entries(validation.stats.typeDistribution)
         .sort((a, b) => b[1] - a[1])
@@ -418,6 +432,47 @@ cli
       const exam = moveQuestion(from, to);
       logger.info(chalk.green(`\n Question déplacée de la position ${from} vers la position ${to}\n`));
       logger.info(chalk.gray("Utilisez 'exam-list' pour voir l'ordre actuel des questions.\n"));
+    } catch (error) {
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
+      process.exit(1);
+    }
+  })
+  
+  .command("exam-weight", "Pondérer une question (attribuer un nombre de points)")
+  .argument("<index>", "Position de la question (commence a 1)", {
+    validator: cli.NUMBER,
+  })
+  .argument("<weight>", "Nombre de points pour cette question (ex: 1, 2, 5, 10)", {
+    validator: cli.NUMBER,
+  })
+  .action(({ args, logger }) => {
+    const { index, weight } = args;
+    
+    try {
+      const exam = setQuestionWeight(index, weight);
+      const question = exam.questions[index - 1];
+      const totalPoints = calculateTotalPoints();
+      
+      logger.info(chalk.green.bold("\n Points attribués à la question\n"));
+      logger.info(chalk.cyan("Position: ") + chalk.yellow(`#${index}`));
+      logger.info(chalk.cyan("Titre: ") + chalk.white(question.title));
+      logger.info(chalk.cyan("Points: ") + chalk.yellow(weight));
+      logger.info(chalk.cyan("Total points de l'examen: ") + chalk.yellow(totalPoints));
+      logger.info("");
+    } catch (error) {
+      logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
+      process.exit(1);
+    }
+  })
+  
+  .command("exam-shuffle", "Mélanger l'ordre des questions (ordre aléatoire)")
+  .action(({ logger }) => {
+    try {
+      const exam = shuffleQuestions();
+      
+      logger.info(chalk.green.bold("\n Questions mélangées avec succès\n"));
+      logger.info(chalk.cyan("Nombre de questions: ") + chalk.yellow(exam.questions.length));
+      logger.info(chalk.gray("\nUtilisez 'exam-list' pour voir le nouvel ordre des questions.\n"));
     } catch (error) {
       logger.error(chalk.red(`\n Erreur: ${error.message}\n`));
       process.exit(1);

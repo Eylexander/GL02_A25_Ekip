@@ -98,6 +98,9 @@ function addQuestion(dataDir, file, title) {
   
   const question = getQuestionByReference(dataDir, file, title);
   
+  // Add weight property (default: 1 point)
+  question.weight = 1;
+  
   exam.questions.push(question);
   exam.modifiedAt = new Date().toISOString();
   
@@ -188,6 +191,16 @@ function validateExam() {
     );
   }
   
+  // Calculate total points
+  const totalPoints = calculateTotalPoints();
+  
+  // Check if all questions have reasonable weights
+  const weightStats = {
+    min: Math.min(...exam.questions.map(q => q.weight || 1)),
+    max: Math.max(...exam.questions.map(q => q.weight || 1)),
+    total: totalPoints,
+  };
+  
   return {
     valid: errors.length === 0,
     errors,
@@ -195,6 +208,11 @@ function validateExam() {
     stats: {
       questionCount: exam.questions.length,
       typeDistribution: typeCount,
+      scoring: {
+        totalPoints: totalPoints,
+        minWeight: weightStats.min,
+        maxWeight: weightStats.max,
+      },
     },
   };
 }
@@ -250,6 +268,66 @@ function moveQuestion(fromIndex, toIndex) {
   return exam;
 }
 
+function setQuestionWeight(index, weight) {
+  const exam = loadCurrentExam();
+  
+  if (!exam || !exam.questions || exam.questions.length === 0) {
+    throw new Error("L'examen est vide. Aucune question à pondérer.");
+  }
+  
+  const idx = index - 1;
+  
+  if (idx < 0 || idx >= exam.questions.length) {
+    throw new Error(
+      `Index invalide. L'examen contient ${exam.questions.length} question(s). ` +
+      `Veuillez spécifier un index entre 1 et ${exam.questions.length}.`
+    );
+  }
+  
+  if (typeof weight !== 'number' || weight <= 0) {
+    throw new Error("Le poids doit être un nombre positif (ex: 1, 2, 5, 10).");
+  }
+  
+  exam.questions[idx].weight = weight;
+  exam.modifiedAt = new Date().toISOString();
+  
+  saveCurrentExam(exam);
+  return exam;
+}
+
+function calculateTotalPoints() {
+  const exam = loadCurrentExam();
+  
+  if (!exam || !exam.questions || exam.questions.length === 0) {
+    return 0;
+  }
+  
+  return exam.questions.reduce((total, question) => {
+    return total + (question.weight || 1);
+  }, 0);
+}
+
+function shuffleQuestions() {
+  const exam = loadCurrentExam();
+  
+  if (!exam || !exam.questions || exam.questions.length === 0) {
+    throw new Error("L'examen est vide. Aucune question à mélanger.");
+  }
+  
+  // Fisher-Yates shuffle algorithm
+  const questions = [...exam.questions];
+  for (let i = questions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [questions[i], questions[j]] = [questions[j], questions[i]];
+  }
+  
+  exam.questions = questions;
+  exam.modifiedAt = new Date().toISOString();
+  
+  saveCurrentExam(exam);
+  return exam;
+}
+
 module.exports = {
   initExam,
   addQuestion,
@@ -261,4 +339,7 @@ module.exports = {
   moveQuestion,
   loadCurrentExam,
   saveCurrentExam,
+  setQuestionWeight,
+  calculateTotalPoints,
+  shuffleQuestions,
 };

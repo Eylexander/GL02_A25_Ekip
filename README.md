@@ -98,9 +98,19 @@ Gestion de la composition d'examens.
 - `addQuestion(file, title)` : Ajoute une question à l'examen
 - `removeQuestion(index)` : Retire une question par position
 - `moveQuestion(from, to)` : Déplace une question
+- `setQuestionWeight(index, weight)` : **NOUVEAU** - Attribue un poids (nombre de points) à une question
+- `calculateTotalPoints()` : **NOUVEAU** - Calcule le total des points de l'examen
+- `shuffleQuestions()` : **NOUVEAU** - Mélange l'ordre des questions de manière aléatoire
 - `getCurrentExam()` : Récupère l'examen en cours
 - `clearExam()` : Efface l'examen en cours
-- `validateExam()` : Valide l'examen (15-20 questions, unicité)
+- `validateExam()` : Valide l'examen (15-20 questions, unicité, points)
+- `getExamStats()` : Statistiques de l'examen
+
+**Nouvelles fonctionnalités :**
+
+- **Pondération des questions** : Chaque question peut avoir un poids différent (1, 2, 5, 10 points, etc.)
+- **Ordre aléatoire** : Les questions peuvent être mélangées pour créer différentes versions d'un même examen
+- **Calcul automatique** : Le total des points est calculé et affiché automatiquement
 - `getExamStats()` : Statistiques de l'examen
 
 **Contraintes :**
@@ -435,6 +445,13 @@ node index.js exam-remove 3
 
 # Déplacer une question
 node index.js exam-move 5 2  # Déplace la question de la position 5 vers la position 2
+
+# Pondérer une question (attribuer des points)
+node index.js exam-weight 1 5   # Attribue 5 points à la question en position 1
+node index.js exam-weight 2 10  # Attribue 10 points à la question en position 2
+
+# Mélanger l'ordre des questions (ordre aléatoire)
+node index.js exam-shuffle
 
 # Valider l'examen
 node index.js exam-validate
