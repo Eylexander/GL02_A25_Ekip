@@ -212,17 +212,14 @@ cli
   })
   
   .command("exam-add", "Ajouter une question a l'examen en cours (EF02)")
-  .argument("<file>", "Nom du fichier contenant la question")
+  .argument("<file>", "Chemin vers le fichier contenant la question")
   .argument("<title>", "Titre de la question (utilisez des guillemets si elle contient des espaces)")
-  .option("-d, --dataDir <dir>", "Repertoire contenant les fichiers GIFT", {
-    default: "./data",
-  })
+
   .action(({ args, options, logger }) => {
     const { file, title } = args;
-    const { dataDir } = options;
     
     try {
-      const exam = addQuestion(dataDir, file, title);
+      const exam = addQuestion(file, title);
       const questionCount = exam.questions.length;
       
       logger.info(chalk.green.bold("\n Question ajoutée avec succès\n"));

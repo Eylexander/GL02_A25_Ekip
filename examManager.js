@@ -47,22 +47,22 @@ function initExam(title = "Nouvel examen") {
   return exam;
 }
 
-function getQuestionByReference(dataDir, file, title) {
-  const filePath = path.join(dataDir, file);
+function getQuestionByReference(filePath, title) {
+  
   
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Le fichier "${file}" n'existe pas dans ${dataDir}`);
+    throw new Error(`Le fichier "${filePath}" n'existe pas.`);
   }
   
   const questions = parseGiftFile(filePath);
   const question = questions.find(q => q.title === title);
   
   if (!question) {
-    throw new Error(`La question "${title}" n'a pas été trouvée dans ${file}`);
+    throw new Error(`La question "${title}" n'a pas été trouvée dans ${filePath}`);
   }
   
   return {
-    file: file,
+    file: filePath,
     title: title,
     type: question.type,
     questionText: question.questionText,
@@ -72,7 +72,7 @@ function getQuestionByReference(dataDir, file, title) {
   };
 }
 
-function addQuestion(dataDir, file, title) {
+function addQuestion(path, title) {
   const exam = loadCurrentExam();
   
   if (!exam || !exam.questions) {
@@ -87,7 +87,7 @@ function addQuestion(dataDir, file, title) {
   }
   
   const isDuplicate = exam.questions.some(
-    q => q.file === file && q.title === title
+    q => q.file === path && q.title === title
   );
   
   if (isDuplicate) {
@@ -96,7 +96,7 @@ function addQuestion(dataDir, file, title) {
     );
   }
   
-  const question = getQuestionByReference(dataDir, file, title);
+  const question = getQuestionByReference(path, title);
   
   // Add weight property (default: 1 point)
   question.weight = 1;
